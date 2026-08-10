@@ -44,6 +44,7 @@ interface DataDasarProps {
   classes: Kelas[];
   onUpdateClasses?: (updatedClasses: Kelas[]) => void;
   students: Siswa[];
+  onUpdateStudents?: (updatedStudents: Siswa[]) => void;
   onAddStudent: (newStudent: Siswa) => void;
   onBulkAddStudents?: (newStudentsList: Siswa[]) => void;
   onToggleStudentStatus: (nisn: string) => void;
@@ -58,6 +59,7 @@ export default function DataDasar({
   classes,
   onUpdateClasses,
   students,
+  onUpdateStudents,
   onAddStudent,
   onBulkAddStudents,
   onToggleStudentStatus,
@@ -198,7 +200,7 @@ export default function DataDasar({
     }
   };
 
-  // Student Filter & Add States
+  // Student Filter & Add & Edit States
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddingSiswa, setIsAddingSiswa] = useState(false);
@@ -210,6 +212,50 @@ export default function DataDasar({
     statusKeaktifan: "Aktif",
     kelasId: "VII-A"
   });
+
+  const [editingSiswa, setEditingSiswa] = useState<Siswa | null>(null);
+  const [isEditSiswaModalOpen, setIsEditSiswaModalOpen] = useState(false);
+
+  const handleOpenEditSiswa = (siswa: Siswa) => {
+    setEditingSiswa({ ...siswa });
+    setIsEditSiswaModalOpen(true);
+  };
+
+  const handleSaveEditSiswa = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSiswa || !editingSiswa.nisn.trim() || !editingSiswa.nama.trim()) {
+      alert("Harap lengkapi NISN dan Nama siswa!");
+      return;
+    }
+
+    const updatedStudents = students.map((s) =>
+      s.nisn === editingSiswa.nisn ? editingSiswa : s
+    );
+
+    if (onUpdateStudents) {
+      onUpdateStudents(updatedStudents);
+    }
+    DataService.saveSiswa(updatedStudents);
+
+    setIsEditSiswaModalOpen(false);
+    setEditingSiswa(null);
+    showToast(`Data siswa "${editingSiswa.nama}" berhasil diperbarui!`);
+  };
+
+  const handleDeleteSiswa = (siswa: Siswa) => {
+    if (
+      confirm(
+        `Apakah Anda yakin ingin menghapus data siswa "${siswa.nama}" (NISN: ${siswa.nisn}) dari database?`
+      )
+    ) {
+      const updatedStudents = students.filter((s) => s.nisn !== siswa.nisn);
+      if (onUpdateStudents) {
+        onUpdateStudents(updatedStudents);
+      }
+      DataService.saveSiswa(updatedStudents);
+      showToast(`Data siswa "${siswa.nama}" telah berhasil dihapus.`);
+    }
+  };
 
   // Upload/Import Student Bulk States & Handlers
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -1288,16 +1334,37 @@ export default function DataDasar({
                         </span>
                       </td>
                       <td className="p-4 text-center">
-                        <button
-                          onClick={() => onToggleStudentStatus(s.nisn)}
-                          className={`px-2 py-1 text-[10px] font-bold rounded border transition ${
-                            s.statusKeaktifan === "Aktif"
-                              ? "border-red-100 text-red-700 bg-red-50/55 hover:bg-red-50"
-                              : "border-emerald-100 text-emerald-800 bg-emerald-50/55 hover:bg-emerald-50"
-                          }`}
-                        >
-                          {s.statusKeaktifan === "Aktif" ? "Nonaktifkan" : "Aktifkan"}
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEditSiswa(s)}
+                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-[11px] rounded-lg border border-amber-200 transition flex items-center gap-1"
+                            title="Edit Data Siswa"
+                            id={`btn-edit-siswa-${s.nisn}`}
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSiswa(s)}
+                            className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-[11px] rounded-lg border border-red-200 transition flex items-center gap-1"
+                            title="Hapus Data Siswa"
+                            id={`btn-delete-siswa-${s.nisn}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Hapus</span>
+                          </button>
+                          <button
+                            onClick={() => onToggleStudentStatus(s.nisn)}
+                            className={`px-2 py-1 text-[10px] font-bold rounded border transition ${
+                              s.statusKeaktifan === "Aktif"
+                                ? "border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100"
+                                : "border-emerald-200 text-emerald-800 bg-emerald-50 hover:bg-emerald-100"
+                            }`}
+                            title="Ubah Status Keaktifan"
+                          >
+                            {s.statusKeaktifan === "Aktif" ? "Nonaktifkan" : "Aktifkan"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -2073,6 +2140,158 @@ export default function DataDasar({
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT DATA SISWA */}
+      {isEditSiswaModalOpen && editingSiswa && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 my-8 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Ubah / Edit Data Siswa</h3>
+                  <p className="text-[11px] text-slate-500 font-mono">NISN: {editingSiswa.nisn}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditSiswaModalOpen(false);
+                  setEditingSiswa(null);
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditSiswa} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                  NISN (Nomor Induk Siswa Nasional)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingSiswa.nisn}
+                  onChange={(e) => setEditingSiswa({ ...editingSiswa, nisn: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-slate-900 font-bold bg-slate-50 focus:bg-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                  Nama Lengkap Siswa
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingSiswa.nama}
+                  onChange={(e) => setEditingSiswa({ ...editingSiswa, nama: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-900 font-bold focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                    Kelas
+                  </label>
+                  <select
+                    value={editingSiswa.kelasId}
+                    onChange={(e) => setEditingSiswa({ ...editingSiswa, kelasId: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 font-bold focus:outline-none focus:border-amber-500"
+                  >
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                    Jenis Kelamin
+                  </label>
+                  <select
+                    value={editingSiswa.gender}
+                    onChange={(e) => setEditingSiswa({ ...editingSiswa, gender: e.target.value as "Laki-laki" | "Perempuan" })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 font-bold focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                    Agama
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingSiswa.agama}
+                    onChange={(e) => setEditingSiswa({ ...editingSiswa, agama: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 font-bold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                    Status Keaktifan
+                  </label>
+                  <select
+                    value={editingSiswa.statusKeaktifan}
+                    onChange={(e) => setEditingSiswa({ ...editingSiswa, statusKeaktifan: e.target.value as "Aktif" | "Tidak Aktif" })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 font-bold focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="Aktif">Aktif</option>
+                    <option value="Tidak Aktif">Tidak Aktif</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                  Kontak Orang Tua / Wali (Opsional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nomor HP/WA Orang Tua"
+                  value={editingSiswa.kontakOrangTua || ""}
+                  onChange={(e) => setEditingSiswa({ ...editingSiswa, kontakOrangTua: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditSiswaModalOpen(false);
+                    setEditingSiswa(null);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md flex items-center gap-1.5"
+                  id="btn-save-edit-siswa"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Simpan Perubahan</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -538,6 +538,7 @@ export default function App() {
                     classes={classes}
                     onUpdateClasses={handleUpdateClasses}
                     students={students}
+                    onUpdateStudents={handleUpdateStudents}
                     onAddStudent={handleAddStudent}
                     onBulkAddStudents={handleBulkAddStudents}
                     onToggleStudentStatus={handleToggleStudentStatus}
