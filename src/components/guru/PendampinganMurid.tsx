@@ -1292,9 +1292,11 @@ export default function PendampinganMurid({
                   </label>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     required
                     value={addNisn}
-                    onChange={(e) => setAddNisn(e.target.value)}
+                    onChange={(e) => setAddNisn(e.target.value.replace(/[^0-9]/g, ""))}
                     placeholder="Contoh: 0098765432"
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none text-slate-900"
                   />

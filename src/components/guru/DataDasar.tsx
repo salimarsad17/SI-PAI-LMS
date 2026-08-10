@@ -228,8 +228,16 @@ export default function DataDasar({
       return;
     }
 
+    const cleanNisn = editingSiswa.nisn.replace(/[^0-9]/g, "");
+    if (!cleanNisn) {
+      alert("NISN hanya boleh berisi angka!");
+      return;
+    }
+
+    const cleanedStudent = { ...editingSiswa, nisn: cleanNisn };
+
     const updatedStudents = students.map((s) =>
-      s.nisn === editingSiswa.nisn ? editingSiswa : s
+      (s.nisn === editingSiswa.nisn || s.nisn === cleanNisn) ? cleanedStudent : s
     );
 
     if (onUpdateStudents) {
@@ -239,7 +247,7 @@ export default function DataDasar({
 
     setIsEditSiswaModalOpen(false);
     setEditingSiswa(null);
-    showToast(`Data siswa "${editingSiswa.nama}" berhasil diperbarui!`);
+    showToast(`Data siswa "${editingSiswa.nama}" (NISN: ${cleanNisn}) berhasil diperbarui!`);
   };
 
   const handleDeleteSiswa = (siswa: Siswa) => {
@@ -406,11 +414,12 @@ export default function DataDasar({
 
   const handleAddSiswaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSiswa.nisn || !newSiswa.nama) {
-      alert("Harap lengkapi NISN dan Nama siswa!");
+    const cleanNisn = newSiswa.nisn.replace(/[^0-9]/g, "");
+    if (!cleanNisn || !newSiswa.nama.trim()) {
+      alert("Harap lengkapi NISN (hanya berupa angka) dan Nama siswa!");
       return;
     }
-    onAddStudent(newSiswa);
+    onAddStudent({ ...newSiswa, nisn: cleanNisn });
     setIsAddingSiswa(false);
     setNewSiswa({
       nisn: "",
@@ -1221,10 +1230,12 @@ export default function DataDasar({
                   <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">NISN (10 digit)</label>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     required
                     placeholder="Contoh: 0098761234"
                     value={newSiswa.nisn}
-                    onChange={(e) => setNewSiswa({ ...newSiswa, nisn: e.target.value })}
+                    onChange={(e) => setNewSiswa({ ...newSiswa, nisn: e.target.value.replace(/[^0-9]/g, "") })}
                     className="w-full p-2 text-xs rounded-lg border border-slate-200 focus:outline-none bg-white font-mono"
                   />
                 </div>
@@ -2180,9 +2191,11 @@ export default function DataDasar({
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   required
                   value={editingSiswa.nisn}
-                  onChange={(e) => setEditingSiswa({ ...editingSiswa, nisn: e.target.value })}
+                  onChange={(e) => setEditingSiswa({ ...editingSiswa, nisn: e.target.value.replace(/[^0-9]/g, "") })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-slate-900 font-bold bg-slate-50 focus:bg-white focus:outline-none focus:border-amber-500"
                 />
               </div>

@@ -906,11 +906,19 @@ export class DataService {
 
   static getSiswa(): Siswa[] {
     const list = loadFromStorage(STORAGE_KEYS.SISWA, defaultSiswa);
-    return [...list].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
+    const sanitized = list.map((s) => ({
+      ...s,
+      nisn: (s.nisn || "").replace(/[^0-9]/g, "")
+    }));
+    return [...sanitized].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
   }
 
   static saveSiswa(data: Siswa[]): void {
-    const sorted = [...data].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
+    const sanitized = data.map((s) => ({
+      ...s,
+      nisn: (s.nisn || "").replace(/[^0-9]/g, "")
+    }));
+    const sorted = [...sanitized].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
     saveToStorage(STORAGE_KEYS.SISWA, sorted);
   }
 
