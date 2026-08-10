@@ -69,16 +69,44 @@ export default function RekapNilai({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioPlaybackProgress, setAudioPlaybackProgress] = useState(30);
 
-  // Filter rekap records based on class and search
-  const filteredRecords = rekapNilai.filter((rec) => {
-    const siswaObj = students.find((s) => s.nisn === rec.siswaNisn);
-    if (!siswaObj) return false;
-    const matchesClass = rec.kelasId === selectedClass;
-    const matchesSearch =
-      rec.siswaNama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rec.siswaNisn.includes(searchQuery);
-    return matchesClass && matchesSearch;
+  // Merge students list with rekapNilai records to ensure ALL current students in Data Siswa are included with their latest name
+  const classStudents = selectedClass === "Semua"
+    ? students
+    : students.filter((st) => st.kelasId === selectedClass);
+
+  const mergedRecords: RekapNilaiTotal[] = classStudents.map((st) => {
+    const existing = rekapNilai.find((r) => r.siswaNisn === st.nisn);
+    if (existing) {
+      return {
+        ...existing,
+        siswaNama: st.nama, // ALWAYS use the latest student name from Data Siswa
+        kelasId: st.kelasId, // ALWAYS use the latest class assignment from Data Siswa
+      };
+    }
+    return {
+      siswaNisn: st.nisn,
+      siswaNama: st.nama,
+      kelasId: st.kelasId,
+      formatifKuis: 80,
+      formatifTugas: 80,
+      formatifDiskusi: 80,
+      sumatifPts: 80,
+      sumatifPas: 80,
+      hafalanJuzAmmaScore: 80,
+      praktikSholat: 80,
+      praktikWudhu: 80,
+    };
   });
+
+  const filteredRecords = mergedRecords
+    .filter((rec) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        rec.siswaNama.toLowerCase().includes(q) ||
+        rec.siswaNisn.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => a.siswaNama.localeCompare(b.siswaNama, "id", { sensitivity: "base" }));
 
   // Filter submissions for the active class that are still UNGRADED
   const pendingSubmissions = submissions.filter(
@@ -245,11 +273,14 @@ export default function RekapNilai({
                 id="select-pending-task"
               >
                 <option value="">-- {pendingSubmissions.length} Tugas Menunggu Penilaian --</option>
-                {submissions.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.siswaNama} - {sub.tugasJudul} ({sub.nilai !== undefined ? `Sudah Dinilai: ${sub.nilai}` : "Belum Dinilai"})
-                  </option>
-                ))}
+                {submissions.map((sub) => {
+                  const currentNama = students.find((s) => s.nisn === sub.siswaNisn)?.nama || sub.siswaNama;
+                  return (
+                    <option key={sub.id} value={sub.id}>
+                      {currentNama} - {sub.tugasJudul} ({sub.nilai !== undefined ? `Sudah Dinilai: ${sub.nilai}` : "Belum Dinilai"})
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>
@@ -269,7 +300,7 @@ export default function RekapNilai({
                     Review Tugas: {selectedSubObj.tugasJudul}
                   </h4>
                   <span className="text-[10px] text-emerald-800 font-bold uppercase">
-                    Siswa: {selectedSubObj.siswaNama} ({selectedSubObj.kelasId}) • NISN: {selectedSubObj.siswaNisn}
+                    Siswa: {students.find((s) => s.nisn === selectedSubObj.siswaNisn)?.nama || selectedSubObj.siswaNama} ({selectedSubObj.kelasId}) • NISN: {selectedSubObj.siswaNisn}
                   </span>
                 </div>
                 <span className="self-start sm:self-center text-[10px] font-mono text-slate-400">

@@ -67,64 +67,61 @@ const defaultKelas: Kelas[] = [
 ];
 
 const defaultSiswa: Siswa[] = [
-  // Kelas VII-A
-  { nisn: "0098765432", nama: "Farhan Maulana", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0812-7382-9901", catatanKhusus: "Juara 1 Musabaqah Tilawatil Qur'an (MTQ) Sekolah, hafal Juz 30." },
-  { nisn: "0091234567", nama: "Siti Aisyah", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0813-6821-4432", catatanKhusus: "Memerlukan bimbingan hafalan Surah Al-Fajr." },
-  { nisn: "0093456789", nama: "Muhammad Rizky", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0821-9988-7711", catatanKhusus: "Sangat aktif dalam kegiatan shalat berjamaah di mushola." },
-  { nisn: "0092233445", nama: "Annisa Rahmawati", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0852-1100-3344", catatanKhusus: "Pengurus Remaja Masjid sekolah." },
-  { nisn: "0094455667", nama: "Zikri Al-Ghifari", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0812-9090-1234", catatanKhusus: "Duduk di barisan depan (pemberitahuan orangtua: kacamata minus)." },
-  { nisn: "0096677889", nama: "Lailatul Qomariyah", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0813-5544-3322", catatanKhusus: "Sering membantu merapikan perlengkapan ibadah mushola." },
-
-  // Kelas VII-B
-  { nisn: "0095551212", nama: "Rian Hidayat", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0822-1122-3344", catatanKhusus: "Perlu perhatian dalam pengumpulan tugas LMS Tepat waktu." },
-  { nisn: "0095551213", nama: "Budi Santoso", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0812-3344-5566", catatanKhusus: "Bakat dalam kaligrafi Arab." },
-  { nisn: "0095551214", nama: "Fatimah Azzahra", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0813-8877-6655", catatanKhusus: "Lancar membaca Al-Qur'an tartil." },
-  { nisn: "0095551215", nama: "Dian Permata", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0853-2211-0099", catatanKhusus: "Aktif berdiskusi di kelas." },
-  { nisn: "0095551216", nama: "Kiki Amalia", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0812-6677-8899", catatanKhusus: "" },
-
-  // Kelas VIII-A
-  { nisn: "0081122334", nama: "Ahmad Fauzi", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-A", kontakOrangTua: "0813-4433-2211", catatanKhusus: "Ketua kelas VIII-A, kepemimpinan baik." },
-  { nisn: "0081122335", nama: "Nabila Fitriani", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-A", kontakOrangTua: "0821-6655-4433", catatanKhusus: "" },
+  // A
   { nisn: "0081122336", nama: "Aditya Pratama", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-A", kontakOrangTua: "0852-7788-9900", catatanKhusus: "Muazin mushola sekolah." },
-  { nisn: "0081122337", nama: "Putri Lestari", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-A", kontakOrangTua: "0812-0011-2233", catatanKhusus: "Sangat rapi dalam mencatat pelajaran PAI." },
-
-  // Kelas VIII-B
-  { nisn: "0082233441", nama: "Dafa Ramadhan", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-B", kontakOrangTua: "0813-2233-4455", catatanKhusus: "" },
-  { nisn: "0082233442", nama: "Sania Mirza", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-B", kontakOrangTua: "0821-3344-5566", catatanKhusus: "Juara olimpiade PAI tingkat kabupaten." },
-  { nisn: "0082233443", nama: "Hendri Irawan", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-B", kontakOrangTua: "0852-4455-6677", catatanKhusus: "" },
-  { nisn: "0082233444", nama: "Dewi Safitri", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-B", kontakOrangTua: "0812-5566-7788", catatanKhusus: "Suka membantu kawan dalam kelompok belajar." },
-
-  // Kelas VII-C
+  { nisn: "0081122334", nama: "Ahmad Fauzi", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-A", kontakOrangTua: "0813-4433-2211", catatanKhusus: "Ketua kelas VIII-A, kepemimpinan baik." },
+  { nisn: "0092233445", nama: "Annisa Rahmawati", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0852-1100-3344", catatanKhusus: "Pengurus Remaja Masjid sekolah." },
   { nisn: "0097711221", nama: "Aris Munandar", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "7C", kontakOrangTua: "0812-9900-1122" },
-  { nisn: "0097711222", nama: "Tania Putri", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "7C", kontakOrangTua: "0813-1122-3344" },
-
-  // Kelas VII-D
+  // B
   { nisn: "0097722331", nama: "Bambang Kurniawan", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "7D", kontakOrangTua: "0821-3344-5566" },
+  { nisn: "0095551213", nama: "Budi Santoso", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0812-3344-5566", catatanKhusus: "Bakat dalam kaligrafi Arab." },
+  // C
   { nisn: "0097722332", nama: "Cinta Laura", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "7D", kontakOrangTua: "0852-5566-7788" },
-
-  // Kelas VIII-C
+  // D
+  { nisn: "0082233441", nama: "Dafa Ramadhan", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-B", kontakOrangTua: "0813-2233-4455", catatanKhusus: "" },
+  { nisn: "0082233444", nama: "Dewi Safitri", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-B", kontakOrangTua: "0812-5566-7788", catatanKhusus: "Suka membantu kawan dalam kelompok belajar." },
+  { nisn: "0095551215", nama: "Dian Permata", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0853-2211-0099", catatanKhusus: "Aktif berdiskusi di kelas." },
   { nisn: "0087733441", nama: "Dimas Anggara", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "8C", kontakOrangTua: "0812-6677-8899" },
+  // E
   { nisn: "0087733442", nama: "Eka Rahmawati", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "8C", kontakOrangTua: "0813-7788-9900" },
-
-  // Kelas VIII-D
+  // F
+  { nisn: "0098765432", nama: "Farhan Maulana", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0812-7382-9901", catatanKhusus: "Juara 1 Musabaqah Tilawatil Qur'an (MTQ) Sekolah, hafal Juz 30." },
+  { nisn: "0095551214", nama: "Fatimah Azzahra", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0813-8877-6655", catatanKhusus: "Lancar membaca Al-Qur'an tartil." },
   { nisn: "0087744551", nama: "Fikri Haikal", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "8D", kontakOrangTua: "0821-8899-0011" },
+  // G
   { nisn: "0087744552", nama: "Gita Gutawa", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "8D", kontakOrangTua: "0852-9900-1122" },
-
-  // Kelas IX-A
+  // H
   { nisn: "0077755661", nama: "Hafiz Ridwan", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9A", kontakOrangTua: "0812-1122-3344" },
+  { nisn: "0082233443", nama: "Hendri Irawan", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-B", kontakOrangTua: "0852-4455-6677", catatanKhusus: "" },
+  // I
   { nisn: "0077755662", nama: "Indah Permatasari", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9A", kontakOrangTua: "0813-2233-4455" },
-
-  // Kelas IX-B
+  // J
   { nisn: "0077766771", nama: "Joko Widodo", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9B", kontakOrangTua: "0821-3344-5566" },
+  // K
   { nisn: "0077766772", nama: "Kartika Sari", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9B", kontakOrangTua: "0852-4455-6677" },
-
-  // Kelas IX-C
+  { nisn: "0095551216", nama: "Kiki Amalia", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0812-6677-8899", catatanKhusus: "" },
+  // L
+  { nisn: "0096677889", nama: "Lailatul Qomariyah", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0813-5544-3322", catatanKhusus: "Sering membantu merapikan perlengkapan ibadah mushola." },
   { nisn: "0077777881", nama: "Lukman Hakim", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9C", kontakOrangTua: "0812-5566-7788" },
+  // M
   { nisn: "0077777882", nama: "Maya Sofa", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9C", kontakOrangTua: "0813-6677-8899" },
-
-  // Kelas IX-D
+  { nisn: "0093456789", nama: "Muhammad Rizky", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0821-9988-7711", catatanKhusus: "Sangat aktif dalam kegiatan shalat berjamaah di mushola." },
+  // N
+  { nisn: "0081122335", nama: "Nabila Fitriani", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-A", kontakOrangTua: "0821-6655-4433", catatanKhusus: "" },
   { nisn: "0077788991", nama: "Naufal Samudra", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9D", kontakOrangTua: "0821-7788-9900" },
-  { nisn: "0077788992", nama: "Oktavia Ramadhani", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9D", kontakOrangTua: "0852-8899-0011" }
+  // O
+  { nisn: "0077788992", nama: "Oktavia Ramadhani", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "9D", kontakOrangTua: "0852-8899-0011" },
+  // P
+  { nisn: "0081122337", nama: "Putri Lestari", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-A", kontakOrangTua: "0812-0011-2233", catatanKhusus: "Sangat rapi dalam mencatat pelajaran PAI." },
+  // R
+  { nisn: "0095551212", nama: "Rian Hidayat", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-B", kontakOrangTua: "0822-1122-3344", catatanKhusus: "Perlu perhatian dalam pengumpulan tugas LMS Tepat waktu." },
+  // S
+  { nisn: "0082233442", nama: "Sania Mirza", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VIII-B", kontakOrangTua: "0821-3344-5566", catatanKhusus: "Juara olimpiade PAI tingkat kabupaten." },
+  { nisn: "0091234567", nama: "Siti Aisyah", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0813-6821-4432", catatanKhusus: "Memerlukan bimbingan hafalan Surah Al-Fajr." },
+  // T
+  { nisn: "0097711222", nama: "Tania Putri", gender: "Perempuan", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "7C", kontakOrangTua: "0813-1122-3344" },
+  // Z
+  { nisn: "0094455667", nama: "Zikri Al-Ghifari", gender: "Laki-laki", agama: "Islam", statusKeaktifan: "Aktif", kelasId: "VII-A", kontakOrangTua: "0812-9090-1234", catatanKhusus: "Duduk di barisan depan (pemberitahuan orangtua: kacamata minus)." }
 ];
 
 const defaultPertemuanMurid: RekapPertemuanMurid[] = [
@@ -908,11 +905,13 @@ export class DataService {
   }
 
   static getSiswa(): Siswa[] {
-    return loadFromStorage(STORAGE_KEYS.SISWA, defaultSiswa);
+    const list = loadFromStorage(STORAGE_KEYS.SISWA, defaultSiswa);
+    return [...list].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
   }
 
   static saveSiswa(data: Siswa[]): void {
-    saveToStorage(STORAGE_KEYS.SISWA, data);
+    const sorted = [...data].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
+    saveToStorage(STORAGE_KEYS.SISWA, sorted);
   }
 
   static getPerangkatAjar(): PerangkatAjar[] {

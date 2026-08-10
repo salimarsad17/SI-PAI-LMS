@@ -92,9 +92,29 @@ export default function App() {
   const [guruActiveTab, setGuruActiveTab] = useState<"dashboard" | "master" | "perangkat" | "jurnal" | "nilai" | "wali" | "link">("dashboard");
   const [siswaActiveTab, setSiswaActiveTab] = useState<"dashboard" | "lms" | "ibadah" | "nilai">("dashboard");
 
+  const sortStudentsByName = (list: Siswa[]): Siswa[] => {
+    return [...list].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
+  };
+
   const handleUpdateStudents = (updatedStudents: Siswa[]) => {
-    setStudents(updatedStudents);
-    DataService.saveSiswa(updatedStudents);
+    const sorted = sortStudentsByName(updatedStudents);
+    setStudents(sorted);
+    DataService.saveSiswa(sorted);
+
+    // Synchronize names and classes in rekapNilai state
+    const updatedRekap = rekapNilai.map((rec) => {
+      const match = sorted.find((s) => s.nisn === rec.siswaNisn);
+      if (match) {
+        return {
+          ...rec,
+          siswaNama: match.nama,
+          kelasId: match.kelasId,
+        };
+      }
+      return rec;
+    });
+    setRekapNilai(updatedRekap);
+    DataService.saveRekapNilai(updatedRekap);
   };
 
   // Preselected grading ID to route directly from notification panel
@@ -145,7 +165,7 @@ export default function App() {
   };
 
   const handleAddStudent = (newStudent: Siswa) => {
-    const updated = [...students, newStudent];
+    const updated = sortStudentsByName([...students, newStudent]);
     setStudents(updated);
     DataService.saveSiswa(updated);
 
@@ -169,7 +189,7 @@ export default function App() {
   };
 
   const handleBulkAddStudents = (newStudentsList: Siswa[]) => {
-    const updated = [...students, ...newStudentsList];
+    const updated = sortStudentsByName([...students, ...newStudentsList]);
     setStudents(updated);
     DataService.saveSiswa(updated);
 
@@ -193,15 +213,17 @@ export default function App() {
   };
 
   const handleToggleStudentStatus = (nisn: string) => {
-    const updated = students.map((s) => {
-      if (s.nisn === nisn) {
-        return {
-          ...s,
-          statusKeaktifan: (s.statusKeaktifan === "Aktif" ? "Tidak Aktif" : "Aktif") as "Aktif" | "Tidak Aktif"
-        };
-      }
-      return s;
-    });
+    const updated = sortStudentsByName(
+      students.map((s) => {
+        if (s.nisn === nisn) {
+          return {
+            ...s,
+            statusKeaktifan: (s.statusKeaktifan === "Aktif" ? "Tidak Aktif" : "Aktif") as "Aktif" | "Tidak Aktif"
+          };
+        }
+        return s;
+      })
+    );
     setStudents(updated);
     DataService.saveSiswa(updated);
   };

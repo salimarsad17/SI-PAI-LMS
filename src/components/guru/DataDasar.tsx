@@ -390,11 +390,13 @@ export default function DataDasar({
   const [showRaporPreview, setShowRaporPreview] = useState(false);
 
   // Filter students based on class & search query
-  const filteredStudents = students.filter(s => {
-    const matchesClass = selectedClassFilter === "Semua" || s.kelasId === selectedClassFilter;
-    const matchesSearch = s.nama.toLowerCase().includes(searchQuery.toLowerCase()) || s.nisn.includes(searchQuery);
-    return matchesClass && matchesSearch;
-  });
+  const filteredStudents = students
+    .filter(s => {
+      const matchesClass = selectedClassFilter === "Semua" || s.kelasId === selectedClassFilter;
+      const matchesSearch = s.nama.toLowerCase().includes(searchQuery.toLowerCase()) || s.nisn.includes(searchQuery);
+      return matchesClass && matchesSearch;
+    })
+    .sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
 
   const handleSaveGuru = (e: React.FormEvent) => {
     e.preventDefault();
@@ -633,7 +635,9 @@ export default function DataDasar({
   };
 
   // Wali Kelas specific data
-  const waliKelasSiswa = students.filter(s => s.kelasId === guru.waliKelasDi);
+  const waliKelasSiswa = students
+    .filter(s => s.kelasId === guru.waliKelasDi)
+    .sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
 
   return (
     <div className="space-y-6">

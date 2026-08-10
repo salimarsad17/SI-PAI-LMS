@@ -306,13 +306,17 @@ export default function PenilaianSemesterParalel({
       }
     });
 
-    // Ensure dates exist on loaded records
-    list = list.map((r) => ({
-      ...r,
-      uhDates: r.uhDates && r.uhDates.length === 12 ? r.uhDates : [...defaultUhDates],
-      ptsDate: r.ptsDate || "2026-10-05",
-      pasDate: r.pasDate || "2026-12-15"
-    }));
+    // Ensure dates exist and student names match Data Siswa
+    list = list.map((r) => {
+      const matchSt = students.find((st) => st.nisn === r.siswaNisn);
+      return {
+        ...r,
+        siswaNama: matchSt ? matchSt.nama : r.siswaNama,
+        uhDates: r.uhDates && r.uhDates.length === 12 ? r.uhDates : [...defaultUhDates],
+        ptsDate: r.ptsDate || "2026-10-05",
+        pasDate: r.pasDate || "2026-12-15"
+      };
+    });
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -325,7 +329,7 @@ export default function PenilaianSemesterParalel({
       );
     }
 
-    return list;
+    return list.sort((a, b) => a.siswaNama.localeCompare(b.siswaNama, "id", { sensitivity: "base" }));
   }, [students, nilaiParalelList, selectedSemester, selectedKelasParalel, selectedMapel, searchQuery]);
 
   // Open modal for new record

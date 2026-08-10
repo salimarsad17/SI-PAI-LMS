@@ -739,7 +739,7 @@ export default function JurnalGuruSiswa({
                       required
                     >
                       <option value="">-- Pilih Siswa --</option>
-                      {students.map(s => (
+                      {[...students].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" })).map(s => (
                         <option key={s.nisn} value={s.nisn}>
                           {s.nama} ({s.kelasId})
                         </option>

@@ -261,21 +261,23 @@ export default function PendampinganMurid({
   };
 
   // Filter students based on Class, Search, and Gender
-  const filteredStudents = students.filter((s) => {
-    if (selectedClassId !== "ALL" && s.kelasId !== selectedClassId) return false;
-    if (genderFilter === "L" && s.gender !== "Laki-laki") return false;
-    if (genderFilter === "P" && s.gender !== "Perempuan") return false;
+  const filteredStudents = students
+    .filter((s) => {
+      if (selectedClassId !== "ALL" && s.kelasId !== selectedClassId) return false;
+      if (genderFilter === "L" && s.gender !== "Laki-laki") return false;
+      if (genderFilter === "P" && s.gender !== "Perempuan") return false;
 
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      const matchNisn = s.nisn.toLowerCase().includes(q);
-      const matchNama = s.nama.toLowerCase().includes(q);
-      const matchCatatan = (s.catatanKhusus || "").toLowerCase().includes(q);
-      const matchKontak = (s.kontakOrangTua || "").toLowerCase().includes(q);
-      return matchNisn || matchNama || matchCatatan || matchKontak;
-    }
-    return true;
-  });
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const matchNisn = s.nisn.toLowerCase().includes(q);
+        const matchNama = s.nama.toLowerCase().includes(q);
+        const matchCatatan = (s.catatanKhusus || "").toLowerCase().includes(q);
+        const matchKontak = (s.kontakOrangTua || "").toLowerCase().includes(q);
+        return matchNisn || matchNama || matchCatatan || matchKontak;
+      }
+      return true;
+    })
+    .sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
 
   // Filter pertemuan based on Class and Search
   const filteredPertemuan = pertemuanList.filter((p) => {
