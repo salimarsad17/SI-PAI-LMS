@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from "react";
+import * as XLSX from "xlsx";
 import {
   User,
   ShieldAlert,
@@ -463,15 +464,37 @@ export default function DataDasar({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const fileName = file.name.toLowerCase();
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        setUploadRawText(content);
-        parseCsvOrTextData(content, defaultImportClass);
-      }
-    };
-    reader.readAsText(file);
+
+    if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+      reader.onload = (event) => {
+        try {
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: "array" });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert worksheet to CSV string
+          const csvText = XLSX.utils.sheet_to_csv(worksheet);
+          setUploadRawText(csvText);
+          parseCsvOrTextData(csvText, defaultImportClass);
+        } catch (err) {
+          console.error("Gagal membaca file Excel:", err);
+          setUploadError("Gagal membaca berkas Excel. Pastikan format file .xlsx atau .xls valid.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        if (content) {
+          setUploadRawText(content);
+          parseCsvOrTextData(content, defaultImportClass);
+        }
+      };
+      reader.readAsText(file);
+    }
   };
 
   const handlePasteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -2155,15 +2178,15 @@ export default function DataDasar({
                   </div>
                   <div>
                     <span className="block font-bold text-slate-800 text-sm">
-                      Pilih atau tarik berkas data (.csv / .txt)
+                      Pilih atau tarik berkas data Excel (.xlsx / .xls) atau CSV / TXT
                     </span>
                     <span className="text-[11px] text-slate-400">
-                      Mendukung pemisah koma (,), titik koma (;), atau tab dari Excel
+                      Mendukung format Microsoft Excel, Google Sheets CSV, dan berkas teks berpemisah tab/koma
                     </span>
                   </div>
                   <input
                     type="file"
-                    accept=".csv,.txt"
+                    accept=".xlsx,.xls,.csv,.txt"
                     onChange={handleFileUpload}
                     className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-700 file:text-white hover:file:bg-emerald-800 file:cursor-pointer cursor-pointer"
                   />
