@@ -281,50 +281,178 @@ export default function DataDasar({
     }
 
     const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    // Detect column mapping from header row if present
+    let nisnIdx = -1;
+    let namaIdx = -1;
+    let kelasIdx = -1;
+    let genderIdx = -1;
+    let agamaIdx = -1;
+    let phoneIdx = -1;
+    let hasHeader = false;
+
+    // Check first line for header keywords
+    const firstLineCols = lines[0].split(/,|\t|;/).map((c) => c.trim().toLowerCase());
+    const isHeaderLine = firstLineCols.some((col) =>
+      ["nisn", "nama", "kelas", "gender", "jenis kelamin", "agama", "telepon", "nomer", "nomor", "kontak", "hp", "wa", "no"].some((k) => col.includes(k))
+    );
+
+    if (isHeaderLine) {
+      hasHeader = true;
+      firstLineCols.forEach((col, idx) => {
+        if (col.includes("nisn")) {
+          nisnIdx = idx;
+        } else if (col.includes("nama")) {
+          namaIdx = idx;
+        } else if (col.includes("kelas")) {
+          kelasIdx = idx;
+        } else if (col.includes("gender") || col.includes("kelamin") || col.includes("jk")) {
+          genderIdx = idx;
+        } else if (col.includes("agama")) {
+          agamaIdx = idx;
+        } else if (col.includes("telepon") || col.includes("nomer") || col.includes("nomor") || col.includes("kontak") || col.includes("hp") || col.includes("phone")) {
+          if (!col.includes("nisn")) {
+            phoneIdx = idx;
+          }
+        }
+      });
+    }
+
     const parsedList: Siswa[] = [];
 
     lines.forEach((line, index) => {
-      // Skip header row if detected
-      if (index === 0 && (line.toLowerCase().includes("nisn") || line.toLowerCase().includes("nama"))) {
+      // Skip header row
+      if (index === 0 && hasHeader) return;
+
+      const cols = line.split(/,|\t|;/).map((c) => c.trim());
+      if (cols.length === 0) return;
+
+      // Filter out any row where column values are header terms
+      const lineLower = line.toLowerCase();
+      if (
+        lineLower.includes("nomor telepon") ||
+        lineLower.includes("nomer telepon") ||
+        lineLower.includes("nomor hp") ||
+        lineLower.includes("nama lengkap") ||
+        lineLower.includes("jenis kelamin") ||
+        lineLower.includes("no. telepon")
+      ) {
         return;
       }
 
-      // Split by comma, tab (\t), or semicolon (;)
-      const cols = line.split(/,|\t|;/).map((c) => c.trim());
+      let rawNisn = "";
+      let rawNama = "";
+      let rawKelas = defaultClass;
+      let rawGenderStr = "L";
+      let rawAgama = "Islam";
+      let rawKontak = "";
 
-      if (cols.length >= 2) {
-        let rawNisn = cols[0].replace(/[^0-9]/g, "");
-        if (!rawNisn || rawNisn.length < 5) {
-          rawNisn = `00${Math.floor(10000000 + Math.random() * 90000000)}`;
+      if (hasHeader) {
+        if (nisnIdx !== -1 && cols[nisnIdx] !== undefined) {
+          rawNisn = cols[nisnIdx];
         }
-
-        const rawNama = cols[1];
-        if (!rawNama) return;
-
-        let rawKelas = cols[2] ? cols[2].toUpperCase() : defaultClass;
-        if (!classes.some((c) => c.id === rawKelas) && !rawKelas.startsWith("VII") && !rawKelas.startsWith("VIII") && !rawKelas.startsWith("IX")) {
-          rawKelas = defaultClass;
+        if (namaIdx !== -1 && cols[namaIdx] !== undefined) {
+          rawNama = cols[namaIdx];
         }
-
-        const rawGender = cols[3] ? cols[3].toUpperCase() : "L";
-        const gender: "Laki-laki" | "Perempuan" =
-          rawGender === "P" || rawGender.startsWith("PEREMPUAN") || rawGender === "FEMALE" ? "Perempuan" : "Laki-laki";
-
-        const agama = cols[4] || "Islam";
-
-        parsedList.push({
-          nisn: rawNisn,
-          nama: rawNama,
-          kelasId: rawKelas,
-          gender: gender,
-          agama: agama,
-          statusKeaktifan: "Aktif"
-        });
+        if (kelasIdx !== -1 && cols[kelasIdx] !== undefined) {
+          rawKelas = cols[kelasIdx];
+        }
+        if (genderIdx !== -1 && cols[genderIdx] !== undefined) {
+          rawGenderStr = cols[genderIdx];
+        }
+        if (agamaIdx !== -1 && cols[agamaIdx] !== undefined) {
+          rawAgama = cols[agamaIdx];
+        }
+        if (phoneIdx !== -1 && cols[phoneIdx] !== undefined) {
+          rawKontak = cols[phoneIdx];
+        }
       }
+
+      // Fallback if no header mapping or missing values
+      if (!rawNisn || !rawNama) {
+        // Determine column offset: if cols[0] is 1-3 digits (Row No), NISN is cols[1], Nama is cols[2]
+        let offset = 0;
+        if (cols[0] && /^\d{1,3}$/.test(cols[0]) && cols[1] && /[a-zA-Z]|\d{5,}/.test(cols[1])) {
+          offset = 1;
+        }
+
+        // Search for column that actually looks like NISN (digits, not starting with 08 or 628 phone prefix)
+        if (!rawNisn) {
+          for (let i = offset; i < cols.length; i++) {
+            const digits = cols[i].replace(/[^0-9]/g, "");
+            if (digits.length >= 8 && digits.length <= 13 && !digits.startsWith("08") && !digits.startsWith("628")) {
+              rawNisn = digits;
+              break;
+            }
+          }
+          if (!rawNisn && cols[offset]) {
+            rawNisn = cols[offset].replace(/[^0-9]/g, "");
+          }
+        }
+
+        if (!rawNama) {
+          for (let i = offset; i < cols.length; i++) {
+            const val = cols[i];
+            if (val && /[a-zA-Z]{2,}/.test(val) && !val.toLowerCase().includes("telepon") && !val.toLowerCase().includes("nomor") && !val.toLowerCase().includes("nomer")) {
+              rawNama = val;
+              break;
+            }
+          }
+          if (!rawNama && cols[offset + 1]) {
+            rawNama = cols[offset + 1];
+          }
+        }
+
+        if (!rawKelas && cols[offset + 2]) {
+          rawKelas = cols[offset + 2];
+        }
+      }
+
+      // Final clean up of NISN: keep strictly digits only
+      rawNisn = rawNisn.replace(/[^0-9]/g, "");
+
+      // Ensure rawNisn is valid digits only (no text like "nomer telepon")
+      if (!rawNisn || rawNisn.length < 5) {
+        // Generate valid numeric NISN if missing
+        rawNisn = `00${Math.floor(10000000 + Math.random() * 90000000)}`;
+      }
+
+      // Check if rawNama is invalid / header text
+      if (
+        !rawNama ||
+        rawNama.toLowerCase().includes("nomer") ||
+        rawNama.toLowerCase().includes("nomor") ||
+        rawNama.toLowerCase().includes("telepon") ||
+        rawNama.toLowerCase().includes("nisn")
+      ) {
+        return; // Skip invalid row
+      }
+
+      // Validate class
+      rawKelas = rawKelas.toUpperCase();
+      if (!classes.some((c) => c.id === rawKelas) && !rawKelas.startsWith("VII") && !rawKelas.startsWith("VIII") && !rawKelas.startsWith("IX")) {
+        rawKelas = defaultClass;
+      }
+
+      // Validate Gender
+      const upperGender = rawGenderStr.toUpperCase();
+      const gender: "Laki-laki" | "Perempuan" =
+        upperGender === "P" || upperGender.startsWith("PEREMPUAN") || upperGender === "FEMALE" ? "Perempuan" : "Laki-laki";
+
+      parsedList.push({
+        nisn: rawNisn,
+        nama: rawNama,
+        kelasId: rawKelas,
+        gender: gender,
+        agama: rawAgama || "Islam",
+        kontakOrangTua: rawKontak,
+        statusKeaktifan: "Aktif",
+      });
     });
 
     if (parsedList.length === 0) {
-      setUploadError("Tidak dapat menemukan data siswa yang valid. Gunakan format: NISN, Nama, Kelas, Gender, Agama");
+      setUploadError("Tidak dapat menemukan data siswa yang valid. Gunakan format: NISN, Nama, Kelas, Gender, Agama, Kontak Orang Tua");
     } else {
       setUploadError(null);
     }
@@ -353,12 +481,12 @@ export default function DataDasar({
   };
 
   const handleDownloadTemplate = () => {
-    const csvHeader = "NISN,Nama Lengkap,Kelas,Jenis Kelamin,Agama\n";
+    const csvHeader = "NISN,Nama Lengkap,Kelas,Jenis Kelamin,Agama,Kontak Orang Tua\n";
     const sampleRows =
-      "0098765431,Ahmad Fauzi,VII-A,Laki-laki,Islam\n" +
-      "0098765432,Siti Aminah,VII-A,Perempuan,Islam\n" +
-      "0098765433,Rizky Pratama,VII-B,Laki-laki,Islam\n" +
-      "0098765434,Dewi Lestari,VII-B,Perempuan,Islam\n";
+      "0098765431,Ahmad Fauzi,VII-A,Laki-laki,Islam,081234567890\n" +
+      "0098765432,Siti Aminah,VII-A,Perempuan,Islam,081234567891\n" +
+      "0098765433,Rizky Pratama,VII-B,Laki-laki,Islam,081234567892\n" +
+      "0098765434,Dewi Lestari,VII-B,Perempuan,Islam,081234567893\n";
 
     const blob = new Blob([csvHeader + sampleRows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
