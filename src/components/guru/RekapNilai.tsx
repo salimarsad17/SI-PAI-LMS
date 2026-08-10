@@ -1,0 +1,629 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState } from "react";
+import {
+  FileSpreadsheet,
+  Edit2,
+  Check,
+  Search,
+  Filter,
+  Volume2,
+  CheckCircle,
+  Clock,
+  MessageSquare,
+  Play,
+  Pause,
+  Award,
+  BookOpen,
+  Layers
+} from "lucide-react";
+import { RekapNilaiTotal, Siswa, Kelas, PengumpulanTugas, NilaiKhususPai, NilaiSemesterParalel } from "../../types";
+import PenilaianSemesterParalel from "./PenilaianSemesterParalel";
+
+interface RekapNilaiProps {
+  rekapNilai: RekapNilaiTotal[];
+  onUpdateNilai: (updated: RekapNilaiTotal) => void;
+  students: Siswa[];
+  classes: Kelas[];
+  submissions: PengumpulanTugas[];
+  onGradeSubmission: (subId: string, score: number, comment: string) => void;
+  nilaiKhusus: NilaiKhususPai[];
+  onUpdateNilaiKhusus: (updated: NilaiKhususPai) => void;
+  activeSubmissionIdToGrade?: string; // Preselected submission from dashboard
+  onClearActiveSubmissionId: () => void;
+  nilaiParalelList?: NilaiSemesterParalel[];
+  onUpdateNilaiParalelList?: (newList: NilaiSemesterParalel[]) => void;
+}
+
+export default function RekapNilai({
+  rekapNilai,
+  onUpdateNilai,
+  students,
+  classes,
+  submissions,
+  onGradeSubmission,
+  nilaiKhusus,
+  onUpdateNilaiKhusus,
+  activeSubmissionIdToGrade,
+  onClearActiveSubmissionId,
+  nilaiParalelList = [],
+  onUpdateNilaiParalelList = () => {}
+}: RekapNilaiProps) {
+  // Navigation mode tab ("paralel" or "lms")
+  const [viewMode, setViewMode] = useState<"paralel" | "lms">("paralel");
+
+  const [selectedClass, setSelectedClass] = useState("VII-A");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Editing state for Rekap Nilai Table
+  const [editingStudentNisn, setEditingStudentNisn] = useState<string | null>(null);
+  const [editedRecord, setEditedRecord] = useState<RekapNilaiTotal | null>(null);
+
+  // LMS Grading state
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>(activeSubmissionIdToGrade || "");
+  const [lmsScore, setLmsScore] = useState<number>(85);
+  const [lmsComment, setLmsComment] = useState<string>("");
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioPlaybackProgress, setAudioPlaybackProgress] = useState(30);
+
+  // Filter rekap records based on class and search
+  const filteredRecords = rekapNilai.filter((rec) => {
+    const siswaObj = students.find((s) => s.nisn === rec.siswaNisn);
+    if (!siswaObj) return false;
+    const matchesClass = rec.kelasId === selectedClass;
+    const matchesSearch =
+      rec.siswaNama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rec.siswaNisn.includes(searchQuery);
+    return matchesClass && matchesSearch;
+  });
+
+  // Filter submissions for the active class that are still UNGRADED
+  const pendingSubmissions = submissions.filter(
+    (sub) => sub.nilai === undefined || sub.nilai === null
+  );
+
+  const selectedSubObj = submissions.find((s) => s.id === selectedSubmissionId);
+
+  const handleEditClick = (rec: RekapNilaiTotal) => {
+    setEditingStudentNisn(rec.siswaNisn);
+    setEditedRecord({ ...rec });
+  };
+
+  const handleSaveClick = () => {
+    if (editedRecord) {
+      onUpdateNilai(editedRecord);
+      setEditingStudentNisn(null);
+      setEditedRecord(null);
+    }
+  };
+
+  const handleGradeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSubmissionId) return;
+    onGradeSubmission(selectedSubmissionId, Number(lmsScore), lmsComment);
+
+    // Also update this student's rekap record in our mock service
+    const targetSub = submissions.find(s => s.id === selectedSubmissionId);
+    if (targetSub) {
+      const existingRekap = rekapNilai.find(r => r.siswaNisn === targetSub.siswaNisn);
+      if (existingRekap) {
+        // If they graded 'Latihan Soal Thaharah', it goes to formatifTugas
+        const updated = { ...existingRekap };
+        if (targetSub.tugasId === "tugas-2") {
+          updated.formatifTugas = Number(lmsScore);
+        } else if (targetSub.tugasId === "tugas-1") {
+          updated.hafalanJuzAmmaScore = Number(lmsScore);
+        }
+        onUpdateNilai(updated);
+      }
+    }
+
+    alert("Tugas berhasil dinilai dan tersinkronisasi langsung ke Rekap Nilai!");
+    setSelectedSubmissionId("");
+    setLmsScore(85);
+    setLmsComment("");
+    onClearActiveSubmissionId();
+  };
+
+  const handleAudioPlayToggle = () => {
+    setIsPlayingAudio(!isPlayingAudio);
+    if (!isPlayingAudio) {
+      const interval = setInterval(() => {
+        setAudioPlaybackProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setIsPlayingAudio(false);
+            return 100;
+          }
+          return prev + 5;
+        });
+      }, 300);
+    }
+  };
+
+  // Automated Excel format exporter
+  const handleExportExcel = () => {
+    const csvContent = [
+      "REKAPITULASI NILAI PENDIDIKAN AGAMA ISLAM & BUDI PEKERTI",
+      `UPT SMPN 2 REBANG TANGKAS - KELAS ${selectedClass}`,
+      "TANGGAL EKSPOR: 13 JULI 2026",
+      "",
+      "NISN,Nama Siswa,Kuis (Formatif),Tugas (Formatif),Diskusi (Formatif),PTS (Sumatif),PAS (Sumatif),Hafalan Qur'an,Praktik Sholat,Praktik Wudhu,Nilai Akhir Rata-Rata",
+      ...filteredRecords.map((r) => {
+        const avg = Math.round(
+          (r.formatifKuis +
+            r.formatifTugas +
+            r.formatifDiskusi +
+            r.sumatifPts +
+            r.sumatifPas) /
+            5
+        );
+        return `="${r.siswaNisn}",${r.siswaNama},${r.formatifKuis},${r.formatifTugas},${r.formatifDiskusi},${r.sumatifPts},${r.sumatifPas},${r.hafalanJuzAmmaScore},${r.praktikSholat},${r.praktikWudhu},${avg}`;
+      })
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `REKAP_NILAI_PAI_${selectedClass}_TA_2026.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Sub-menu Tab Switcher */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-2 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+          <button
+            onClick={() => setViewMode("paralel")}
+            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
+              viewMode === "paralel"
+                ? "bg-slate-900 text-amber-300 shadow-md ring-2 ring-emerald-500"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Layers className="w-4 h-4 text-amber-400" />
+            <span>📊 Penilaian Semester & Paralel (7A-D, 8A-D, 9A-D)</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode("lms")}
+            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
+              viewMode === "lms"
+                ? "bg-slate-900 text-amber-300 shadow-md ring-2 ring-emerald-500"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <BookOpen className="w-4 h-4 text-emerald-400" />
+            <span>📝 Review Penilaian LMS & Papan Master Rekap</span>
+          </button>
+        </div>
+
+        <span className="text-[10px] font-bold text-slate-400 hidden lg:inline-block px-3">
+          UPT SMPN 2 Rebang Tangkas
+        </span>
+      </div>
+
+      {viewMode === "paralel" ? (
+        <PenilaianSemesterParalel
+          students={students}
+          classes={classes}
+          nilaiParalelList={nilaiParalelList}
+          onUpdateNilaiParalelList={onUpdateNilaiParalelList}
+        />
+      ) : (
+        <>
+          {/* SECTION 1: LMS GRADING TERMINAL PORTAL */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between">
+          <div className="space-y-4">
+            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <BookOpen className="w-4.5 h-4.5 text-emerald-600" />
+              Terminal Penilaian LMS Siswa
+            </h4>
+            <p className="text-xs text-slate-400">
+              Ulas lembar pengerjaan kuis, setoran file, dan rekaman audio hafalan Juz Amma siswa di sini secara real-time.
+            </p>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase">
+                Pilih Tugas Terkumpul:
+              </label>
+              <select
+                value={selectedSubmissionId}
+                onChange={(e) => setSelectedSubmissionId(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-slate-200 text-xs text-slate-700 font-semibold focus:outline-none"
+                id="select-pending-task"
+              >
+                <option value="">-- {pendingSubmissions.length} Tugas Menunggu Penilaian --</option>
+                {submissions.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.siswaNama} - {sub.tugasJudul} ({sub.nilai !== undefined ? `Sudah Dinilai: ${sub.nilai}` : "Belum Dinilai"})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="pt-4 mt-4 border-t border-slate-50 text-[11px] text-slate-500">
+            Nilai yang Anda masukkan akan langsung tersinkronisasi ke rekap akademik dan buku rapor masing-masing siswa.
+          </div>
+        </div>
+
+        {/* ACTIVE SUBMISSION REVIEWER */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          {selectedSubObj ? (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Review Tugas: {selectedSubObj.tugasJudul}
+                  </h4>
+                  <span className="text-[10px] text-emerald-800 font-bold uppercase">
+                    Siswa: {selectedSubObj.siswaNama} ({selectedSubObj.kelasId}) • NISN: {selectedSubObj.siswaNisn}
+                  </span>
+                </div>
+                <span className="self-start sm:self-center text-[10px] font-mono text-slate-400">
+                  Dikumpulkan: {selectedSubObj.tanggalKumpul}
+                </span>
+              </div>
+
+              {/* Submitted Content Display */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                <span className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  Konten Hasil Pengumpulan Siswa
+                </span>
+
+                {/* Simulated Audio Setoran Hafalan */}
+                {selectedSubObj.tipePengumpulan === "Audio" ? (
+                  <div className="p-4 rounded-xl bg-emerald-700 text-white space-y-3 shadow-md shadow-emerald-700/10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="w-5 h-5 text-amber-300" />
+                        <span className="text-xs font-bold font-sans">Setoran_Suara_Hafalan_AdDuha.mp3</span>
+                      </div>
+                      <span className="text-[10px] font-mono opacity-80">{selectedSubObj.audioDuration || "01:15"}</span>
+                    </div>
+
+                    {/* Audio wave simulation */}
+                    <div className="h-10 flex items-center justify-between gap-1 px-2">
+                      {[30, 60, 45, 90, 70, 40, 20, 65, 80, 50, 95, 30, 40, 75, 85, 20, 60, 45, 30, 50, 85, 60].map((h, i) => (
+                        <div
+                          key={i}
+                          className={`flex-1 rounded-full transition-all duration-300 ${
+                            i * 5 < audioPlaybackProgress ? "bg-amber-400" : "bg-emerald-600"
+                          }`}
+                          style={{ height: `${h}%` }}
+                        ></div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={handleAudioPlayToggle}
+                        type="button"
+                        className="w-10 h-10 rounded-full bg-white text-emerald-800 flex items-center justify-center hover:scale-105 active:scale-95 transition"
+                      >
+                        {isPlayingAudio ? (
+                          <Pause className="w-4 h-4 fill-emerald-800" />
+                        ) : (
+                          <Play className="w-4 h-4 fill-emerald-800 ml-0.5" />
+                        )}
+                      </button>
+                      <div className="flex-1 text-[10px] leading-relaxed text-emerald-100">
+                        {isPlayingAudio ? "Sedang memutar lantunan hafalan siswa..." : "Tekan putar untuk menguji pelafalan Makhraj & Tajwid siswa."}
+                      </div>
+                    </div>
+                  </div>
+                ) : selectedSubObj.tipePengumpulan === "File" ? (
+                  <div className="p-3.5 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-700 truncate max-w-[240px]">
+                      📂 {selectedSubObj.fileName || "Lembar_Kerja_PAI.jpg"}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      ({selectedSubObj.fileSize || "1.2 MB"})
+                    </span>
+                  </div>
+                ) : null}
+
+                <div className="text-xs text-slate-700 font-semibold leading-relaxed bg-white/70 p-3 rounded border border-slate-150 whitespace-pre-line">
+                  {selectedSubObj.kontenTeks}
+                </div>
+              </div>
+
+              {/* Evaluation Form */}
+              <form onSubmit={handleGradeSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+                    Beri Nilai (Skala 0-100)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                    value={lmsScore}
+                    onChange={(e) => setLmsScore(Number(e.target.value))}
+                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-bold"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+                    Catatan Evaluasi / Komentar Guru
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Sangat lancar, tajwidnya luar biasa bagus..."
+                    value={lmsComment}
+                    onChange={(e) => setLmsComment(e.target.value)}
+                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-3 flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSubmissionId("");
+                      onClearActiveSubmissionId();
+                    }}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition"
+                  >
+                    Batal Ulas
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg transition shadow-md"
+                    id="btn-save-grading"
+                  >
+                    Kirim & Input Nilai
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center py-12">
+              <Volume2 className="w-12 h-12 text-slate-300 mb-2" />
+              <p className="text-xs text-slate-500 font-bold">Ulasan Lembar Jawaban & Audio</p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Pilih salah satu tugas siswa di menu kiri untuk memulai penilaian interaktif.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SECTION 2: REKAP NILAI MASTER BOARD */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div>
+            <h4 className="text-base font-bold text-slate-900">Papan Rekapitulasi Nilai PAI</h4>
+            <p className="text-xs text-slate-400">Rangkuman nilai formatif, sumatif, hafalan, dan praktik kelas.</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Cari nama..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-emerald-500/30 focus:border-emerald-600 focus:outline-none w-36"
+              />
+            </div>
+
+            {/* Class filter */}
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="p-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none"
+            >
+              <option value="VII-A">Kelas VII-A</option>
+              <option value="VII-B">Kelas VII-B</option>
+              <option value="VIII-A">Kelas VIII-A</option>
+              <option value="VIII-B">Kelas VIII-B</option>
+            </select>
+
+            {/* Export Excel */}
+            <button
+              onClick={handleExportExcel}
+              className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-100/50 flex items-center gap-1 transition"
+              id="btn-export-excel"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Ekspor ERapor
+            </button>
+          </div>
+        </div>
+
+        {/* Master Table */}
+        <div className="overflow-x-auto rounded-xl border border-slate-100">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100 uppercase">
+                <th className="p-3 w-28">NISN</th>
+                <th className="p-3 w-36">Nama Siswa</th>
+                <th className="p-3 text-center bg-blue-50/20 text-blue-700">Kuis (Form)</th>
+                <th className="p-3 text-center bg-blue-50/20 text-blue-700">Tugas (Form)</th>
+                <th className="p-3 text-center bg-blue-50/20 text-blue-700">Diskusi (Form)</th>
+                <th className="p-3 text-center bg-amber-50/10 text-amber-800">PTS (Sum)</th>
+                <th className="p-3 text-center bg-amber-50/10 text-amber-800">PAS (Sum)</th>
+                <th className="p-3 text-center bg-emerald-50/10 text-emerald-800">Hafalan Juz Amma</th>
+                <th className="p-3 text-center bg-emerald-50/10 text-emerald-800">Praktik Sholat</th>
+                <th className="p-3 text-center bg-emerald-50/10 text-emerald-800">Praktik Wudhu</th>
+                <th className="p-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+              {filteredRecords.map((rec) => {
+                const isEditing = editingStudentNisn === rec.siswaNisn;
+                const recKhusus = nilaiKhusus.find(nk => nk.siswaNisn === rec.siswaNisn);
+
+                return (
+                  <tr key={rec.siswaNisn} className="hover:bg-slate-50/30 transition">
+                    <td className="p-3 font-mono font-bold text-slate-900">{rec.siswaNisn}</td>
+                    <td className="p-3 text-sm font-semibold text-slate-900">{rec.siswaNama}</td>
+
+                    {/* Formative Kuis */}
+                    <td className="p-3 text-center bg-blue-50/10">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editedRecord?.formatifKuis || 0}
+                          onChange={(e) => setEditedRecord({ ...editedRecord!, formatifKuis: Number(e.target.value) })}
+                          className="w-12 p-1 border border-slate-300 rounded text-center text-xs"
+                        />
+                      ) : (
+                        rec.formatifKuis
+                      )}
+                    </td>
+
+                    {/* Formative Tugas */}
+                    <td className="p-3 text-center bg-blue-50/10">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editedRecord?.formatifTugas || 0}
+                          onChange={(e) => setEditedRecord({ ...editedRecord!, formatifTugas: Number(e.target.value) })}
+                          className="w-12 p-1 border border-slate-300 rounded text-center text-xs"
+                        />
+                      ) : (
+                        rec.formatifTugas
+                      )}
+                    </td>
+
+                    {/* Formative Diskusi */}
+                    <td className="p-3 text-center bg-blue-50/10">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editedRecord?.formatifDiskusi || 0}
+                          onChange={(e) => setEditedRecord({ ...editedRecord!, formatifDiskusi: Number(e.target.value) })}
+                          className="w-12 p-1 border border-slate-300 rounded text-center text-xs"
+                        />
+                      ) : (
+                        rec.formatifDiskusi
+                      )}
+                    </td>
+
+                    {/* Sumative PTS */}
+                    <td className="p-3 text-center bg-amber-50/5">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editedRecord?.sumatifPts || 0}
+                          onChange={(e) => setEditedRecord({ ...editedRecord!, sumatifPts: Number(e.target.value) })}
+                          className="w-12 p-1 border border-slate-300 rounded text-center text-xs"
+                        />
+                      ) : (
+                        rec.sumatifPts
+                      )}
+                    </td>
+
+                    {/* Sumative PAS */}
+                    <td className="p-3 text-center bg-amber-50/5">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editedRecord?.sumatifPas || 0}
+                          onChange={(e) => setEditedRecord({ ...editedRecord!, sumatifPas: Number(e.target.value) })}
+                          className="w-12 p-1 border border-slate-300 rounded text-center text-xs"
+                        />
+                      ) : (
+                        rec.sumatifPas
+                      )}
+                    </td>
+
+                    {/* Juz Amma recitation */}
+                    <td className="p-3 text-center bg-emerald-50/5 font-bold text-emerald-800">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editedRecord?.hafalanJuzAmmaScore || 0}
+                          onChange={(e) => setEditedRecord({ ...editedRecord!, hafalanJuzAmmaScore: Number(e.target.value) })}
+                          className="w-12 p-1 border border-slate-300 rounded text-center text-xs"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <span>{rec.hafalanJuzAmmaScore}</span>
+                          {recKhusus && (
+                            <span className="text-[8px] text-slate-400 font-medium font-sans">
+                              {recKhusus.surahJuzAmma} ({recKhusus.kelancaran === "Lancar" ? "Lcr" : "Sdg"})
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Practice Sholat */}
+                    <td className="p-3 text-center bg-emerald-50/5">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editedRecord?.praktikSholat || 0}
+                          onChange={(e) => setEditedRecord({ ...editedRecord!, praktikSholat: Number(e.target.value) })}
+                          className="w-12 p-1 border border-slate-300 rounded text-center text-xs"
+                        />
+                      ) : (
+                        rec.praktikSholat
+                      )}
+                    </td>
+
+                    {/* Practice Wudhu */}
+                    <td className="p-3 text-center bg-emerald-50/5">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editedRecord?.praktikWudhu || 0}
+                          onChange={(e) => setEditedRecord({ ...editedRecord!, praktikWudhu: Number(e.target.value) })}
+                          className="w-12 p-1 border border-slate-300 rounded text-center text-xs"
+                        />
+                      ) : (
+                        rec.praktikWudhu
+                      )}
+                    </td>
+
+                    {/* Action buttons */}
+                    <td className="p-3 text-center">
+                      {isEditing ? (
+                        <button
+                          onClick={handleSaveClick}
+                          className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+                          title="Simpan"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleEditClick(rec)}
+                          className="p-1 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded"
+                          title="Ubah Nilai"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+        </>
+      )}
+    </div>
+  );
+}
