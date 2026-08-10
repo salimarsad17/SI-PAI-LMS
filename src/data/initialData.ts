@@ -51,7 +51,7 @@ const defaultSekolah: DataSekolah = {
 };
 
 const defaultGuru: Guru = {
-  nip: "198412122011011005",
+  nip: "197909172014071004",
   nama: "H. Ahmad Syukron, S.Pd.I., M.Pd.",
   sertifikasi: "Sertifikasi Pendidik Profesional Kemenag RI",
   kontak: "+62 812-7345-6789",
@@ -60,7 +60,7 @@ const defaultGuru: Guru = {
 };
 
 const defaultKelas: Kelas[] = [
-  { id: "VII-A", nama: "Kelas VII-A", waliKelasNip: "198412122011011005", waliKelasNama: "H. Ahmad Syukron, S.Pd.I., M.Pd.", kuota: 32, totalSiswa: 6 },
+  { id: "VII-A", nama: "Kelas VII-A", waliKelasNip: "197909172014071004", waliKelasNama: "H. Ahmad Syukron, S.Pd.I., M.Pd.", kuota: 32, totalSiswa: 6 },
   { id: "VII-B", nama: "Kelas VII-B", waliKelasNip: "198505142014022002", waliKelasNama: "Dra. Nurhayati", kuota: 32, totalSiswa: 5 },
   { id: "VIII-A", nama: "Kelas VIII-A", waliKelasNip: "197808202008011003", waliKelasNama: "Umar Hamdan, S.Ag.", kuota: 32, totalSiswa: 4 },
   { id: "VIII-B", nama: "Kelas VIII-B", waliKelasNip: "198110022010032001", waliKelasNama: "Siti Rahmah, S.Pd.", kuota: 32, totalSiswa: 4 }

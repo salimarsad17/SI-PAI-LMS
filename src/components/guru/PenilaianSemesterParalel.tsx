@@ -1598,7 +1598,7 @@ export default function PenilaianSemesterParalel({
               </div>
               <div className="text-center space-y-12">
                 <p>Rebang Tangkas, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br />Guru Mata Pelajaran PAI</p>
-                <p className="font-bold underline">H. Ahmad Syukron, S.Pd.I., M.Pd.<br /><span className="font-normal text-[10px]">NIP. 19841212 201101 1 005</span></p>
+                <p className="font-bold underline">H. Ahmad Syukron, S.Pd.I., M.Pd.<br /><span className="font-normal text-[10px]">NIP. 19790917 201407 1 004</span></p>
               </div>
             </div>
 
