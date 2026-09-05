@@ -52,6 +52,7 @@ import JurnalGuruSiswa from "./components/guru/JurnalGuruSiswa";
 import RekapNilai from "./components/guru/RekapNilai";
 import PendampinganMurid from "./components/guru/PendampinganMurid";
 import LinkLayanan from "./components/guru/LinkLayanan";
+import { Masterku } from "./components/guru/Masterku";
 
 import SiswaDashboard from "./components/siswa/SiswaDashboard";
 import LmsClassroom from "./components/siswa/LmsClassroom";
@@ -90,8 +91,8 @@ export default function App() {
   };
 
   // Navigation Panel Tabs
-  const [guruActiveTab, setGuruActiveTab] = useState<"dashboard" | "master" | "perangkat" | "jurnal" | "nilai" | "wali" | "link">("dashboard");
-  const [siswaActiveTab, setSiswaActiveTab] = useState<"dashboard" | "lms" | "ibadah" | "nilai">("dashboard");
+  const [guruActiveTab, setGuruActiveTab] = useState<"dashboard" | "master" | "perangkat" | "jurnal" | "nilai" | "wali" | "masterku" | "link">("dashboard");
+  const [siswaActiveTab, setSiswaActiveTab] = useState<"dashboard" | "lms" | "ibadah" | "nilai" | "masterku">("dashboard");
 
   const sortStudentsByName = (list: Siswa[]): Siswa[] => {
     return [...list].sort((a, b) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
@@ -579,6 +580,28 @@ export default function App() {
                       </button>
 
                       <button
+                        onClick={() => setGuruActiveTab("masterku")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          guruActiveTab === "masterku"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <Sparkles className={`w-5 h-5 ${guruActiveTab === "masterku" ? "text-amber-400" : "text-amber-400/90"}`} />
+                        <div className="flex flex-col">
+                          <span className="flex items-center gap-1.5">
+                            Masterku
+                            <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 text-[9px] font-black uppercase tracking-wider">
+                              Khazanah
+                            </span>
+                          </span>
+                          <span className="text-[10px] font-normal text-slate-400 truncate max-w-[170px]">
+                            Qur'an, Hadist, Buku, Nabi, Nasehat, Hikmah
+                          </span>
+                        </div>
+                      </button>
+
+                      <button
                         onClick={() => setGuruActiveTab("link")}
                         className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
                           guruActiveTab === "link"
@@ -656,6 +679,28 @@ export default function App() {
                       >
                         <Award className={`w-5 h-5 ${siswaActiveTab === "nilai" ? "text-amber-400" : "text-slate-400"}`} />
                         <span>Buku Nilai Siswa</span>
+                      </button>
+
+                      <button
+                        onClick={() => setSiswaActiveTab("masterku")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          siswaActiveTab === "masterku"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <Sparkles className={`w-5 h-5 ${siswaActiveTab === "masterku" ? "text-amber-400" : "text-amber-400/90"}`} />
+                        <div className="flex flex-col">
+                          <span className="flex items-center gap-1.5">
+                            Masterku
+                            <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 text-[9px] font-black uppercase tracking-wider">
+                              Khazanah
+                            </span>
+                          </span>
+                          <span className="text-[10px] font-normal text-slate-400 truncate max-w-[170px]">
+                            Qur'an, Hadist, Buku, Nabi, Nasehat, Hikmah
+                          </span>
+                        </div>
                       </button>
                     </div>
                   </div>
@@ -754,6 +799,10 @@ export default function App() {
                   />
                 )}
 
+                {guruActiveTab === "masterku" && (
+                  <Masterku />
+                )}
+
                 {guruActiveTab === "link" && (
                   <LinkLayanan />
                 )}
@@ -801,6 +850,10 @@ export default function App() {
                         rekapNilai={rekapNilai}
                         nilaiKhusus={nilaiKhusus}
                       />
+                    )}
+
+                    {siswaActiveTab === "masterku" && (
+                      <Masterku />
                     )}
                   </div>
                 ) : (

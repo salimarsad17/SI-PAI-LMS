@@ -370,16 +370,23 @@ export default function PendampinganMurid({
     setIsAddStudentModalOpen(false);
   };
 
+  const [studentToDelete, setStudentToDelete] = useState<{ nisn: string; nama: string } | null>(null);
+
   const handleDeleteStudent = (nisn: string, nama: string) => {
-    if (confirm(`Hapus data murid "${nama}" (NISN: ${nisn}) dari daftar pendampingan murid?`)) {
-      const updated = students.filter((s) => s.nisn !== nisn);
-      if (onUpdateStudents) {
-        onUpdateStudents(updated);
-      }
-      DataService.saveSiswa(updated);
-      setShowToast(`Data murid "${nama}" berhasil dihapus.`);
-      setTimeout(() => setShowToast(null), 4000);
+    setStudentToDelete({ nisn, nama });
+  };
+
+  const confirmDeleteStudent = () => {
+    if (!studentToDelete) return;
+    const { nisn, nama } = studentToDelete;
+    const updated = students.filter((s) => (s.nisn || "").trim() !== nisn.trim());
+    if (onUpdateStudents) {
+      onUpdateStudents(updated);
     }
+    DataService.saveSiswa(updated);
+    setShowToast(`Data murid "${nama}" berhasil dihapus.`);
+    setTimeout(() => setShowToast(null), 4000);
+    setStudentToDelete(null);
   };
 
   const handleSaveStudentInfo = (e: React.FormEvent) => {
@@ -2195,6 +2202,43 @@ export default function PendampinganMurid({
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI HAPUS MURID */}
+      {studentToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900">Hapus Data Murid?</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Apakah Anda yakin ingin menghapus <strong className="text-slate-900">{studentToDelete.nama}</strong> (NISN: {studentToDelete.nisn})?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setStudentToDelete(null)}
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteStudent}
+                className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Hapus Murid</span>
+              </button>
             </div>
           </div>
         </div>

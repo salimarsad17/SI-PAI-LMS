@@ -25,7 +25,15 @@ import {
   Layers,
   Info,
   Zap,
-  Target
+  Target,
+  Sparkles,
+  RotateCcw,
+  RefreshCw,
+  Copy,
+  AlertTriangle,
+  Save,
+  Wand2,
+  CalendarDays
 } from "lucide-react";
 import { Siswa, NilaiSemesterParalel, Kelas } from "../../types";
 
@@ -54,6 +62,13 @@ export default function PenilaianSemesterParalel({
 
   // Print Mode State
   const [isPrintViewOpen, setIsPrintViewOpen] = useState<boolean>(false);
+  const [printTanggalCetak, setPrintTanggalCetak] = useState<string>(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  });
 
   // Default initial dates array for UH 1 to 12
   const defaultUhDates = [
@@ -61,6 +76,62 @@ export default function PenilaianSemesterParalel({
     "2026-09-15", "2026-09-29", "2026-10-13", "2026-10-27",
     "2026-11-10", "2026-11-24", "2026-12-01", "2026-12-08"
   ];
+
+  // Helper to ensure 12 dates array
+  const ensure12Dates = (dates?: string[]): string[] => {
+    const arr = Array.isArray(dates) ? [...dates] : [];
+    return Array.from({ length: 12 }, (_, i) => arr[i] || defaultUhDates[i] || "");
+  };
+
+  // Helper to get Indonesian day name and info
+  const getDayInfo = (dateStr?: string) => {
+    if (!dateStr) return { dayName: "-", isWeekend: false, isSunday: false, isSaturday: false, formatted: "Belum diatur" };
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const dayIndex = d.getDay(); // 0 is Sunday, 6 is Saturday
+        const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+        const dayName = days[dayIndex] || "-";
+        const isSunday = dayIndex === 0;
+        const isSaturday = dayIndex === 6;
+        const isWeekend = isSunday || isSaturday;
+        const formatted = d.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+        return { dayName, isWeekend, isSunday, isSaturday, formatted };
+      }
+    } catch {}
+    return { dayName: "-", isWeekend: false, isSunday: false, isSaturday: false, formatted: dateStr };
+  };
+
+  // Helper to add days skipping weekends if desired
+  const addDaysToDate = (dateStr: string, days: number, skipWeekend: boolean = true): string => {
+    if (!dateStr) return "";
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length !== 3) return dateStr;
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      d.setDate(d.getDate() + days);
+      
+      if (skipWeekend) {
+        if (d.getDay() === 0) {
+          d.setDate(d.getDate() + 1); // Minggu -> Senin
+        } else if (d.getDay() === 6) {
+          d.setDate(d.getDate() + 2); // Sabtu -> Senin
+        }
+      }
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    } catch {
+      return dateStr;
+    }
+  };
 
   // Form State for Add/Edit
   const [formData, setFormData] = useState<{
@@ -101,6 +172,12 @@ export default function PenilaianSemesterParalel({
   const [batchUhDates, setBatchUhDates] = useState<string[]>([...defaultUhDates]);
   const [batchPtsDate, setBatchPtsDate] = useState<string>("2026-10-05");
   const [batchPasDate, setBatchPasDate] = useState<string>("2026-12-15");
+  const [batchDateScope, setBatchDateScope] = useState<"current" | "level" | "all">("current");
+  const [filterUhTab, setFilterUhTab] = useState<"all" | "uh1-6" | "uh7-12" | "ujian">("all");
+  const [showAutoRoutine, setShowAutoRoutine] = useState<boolean>(false);
+  const [autoGenStartDate, setAutoGenStartDate] = useState<string>("2026-07-20");
+  const [autoGenInterval, setAutoGenInterval] = useState<number>(14);
+  const [autoGenSkipWeekend, setAutoGenSkipWeekend] = useState<boolean>(true);
 
   // Batch Score Setter Modal State
   const [isBatchScoreModalOpen, setIsBatchScoreModalOpen] = useState<boolean>(false);
@@ -266,6 +343,54 @@ export default function PenilaianSemesterParalel({
     }
   };
 
+  const formatDateIndoLong = (dateStr?: string) => {
+    if (!dateStr) return "-";
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return d.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+      }
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatDateIndoDateOnly = (dateStr?: string) => {
+    if (!dateStr) return "-";
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return d.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+      }
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   // Sync / generate records from DATA SISWA if needed
   const activeRecords = useMemo(() => {
     // Get students matching selected parallel class
@@ -312,7 +437,7 @@ export default function PenilaianSemesterParalel({
       return {
         ...r,
         siswaNama: matchSt ? matchSt.nama : r.siswaNama,
-        uhDates: r.uhDates && r.uhDates.length === 12 ? r.uhDates : [...defaultUhDates],
+        uhDates: ensure12Dates(r.uhDates),
         ptsDate: r.ptsDate || "2026-10-05",
         pasDate: r.pasDate || "2026-12-15"
       };
@@ -344,7 +469,7 @@ export default function PenilaianSemesterParalel({
       semester: selectedSemester,
       mapel: selectedMapel,
       uhList: [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80],
-      uhDates: existingRef?.uhDates ? [...existingRef.uhDates] : [...defaultUhDates],
+      uhDates: ensure12Dates(existingRef?.uhDates),
       pts: 80,
       ptsDate: existingRef?.ptsDate || "2026-10-05",
       pas: 80,
@@ -365,7 +490,7 @@ export default function PenilaianSemesterParalel({
       semester: rec.semester,
       mapel: rec.mapel,
       uhList: [...rec.uhList],
-      uhDates: rec.uhDates && rec.uhDates.length === 12 ? [...rec.uhDates] : [...defaultUhDates],
+      uhDates: ensure12Dates(rec.uhDates),
       pts: rec.pts,
       ptsDate: rec.ptsDate || "2026-10-05",
       pas: rec.pas,
@@ -376,48 +501,180 @@ export default function PenilaianSemesterParalel({
   };
 
   // Open Batch Date Setter Modal
-  const handleOpenBatchDateModal = () => {
+  const handleOpenBatchDateModal = (focusIndex?: number) => {
     const ref = activeRecords[0];
-    if (ref) {
-      setBatchUhDates(ref.uhDates && ref.uhDates.length === 12 ? [...ref.uhDates] : [...defaultUhDates]);
-      setBatchPtsDate(ref.ptsDate || "2026-10-05");
-      setBatchPasDate(ref.pasDate || "2026-12-15");
+    const currentDates = ref?.uhDates;
+    const safeDates = ensure12Dates(currentDates);
+    setBatchUhDates(safeDates);
+    setBatchPtsDate(ref?.ptsDate || "2026-10-05");
+    setBatchPasDate(ref?.pasDate || "2026-12-15");
+    setBatchDateScope("current");
+    setAutoGenStartDate(safeDates[0] || "2026-07-20");
+    if (focusIndex !== undefined) {
+      if (focusIndex < 6) setFilterUhTab("uh1-6");
+      else setFilterUhTab("uh7-12");
     } else {
-      setBatchUhDates([...defaultUhDates]);
-      setBatchPtsDate("2026-10-05");
-      setBatchPasDate("2026-12-15");
+      setFilterUhTab("all");
     }
     setIsBatchDateModalOpen(true);
   };
 
-  // Save Batch Dates for current Class, Semester & Mapel
+  // Helper actions for individual UH date editing
+  const handleUpdateSingleUhDate = (index: number, val: string) => {
+    const updated = [...batchUhDates];
+    updated[index] = val;
+    setBatchUhDates(updated);
+  };
+
+  const handleSetSingleUhToday = (index: number) => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    handleUpdateSingleUhDate(index, `${y}-${m}-${d}`);
+  };
+
+  const handleAddDaysToSingleUh = (index: number, days: number) => {
+    const base = batchUhDates[index] || (index > 0 ? batchUhDates[index - 1] : new Date().toISOString().split("T")[0]);
+    const nextDate = addDaysToDate(base, days, true);
+    handleUpdateSingleUhDate(index, nextDate);
+  };
+
+  const handleCopyPrevUhDate = (index: number) => {
+    if (index === 0) return;
+    const prev = batchUhDates[index - 1];
+    if (prev) {
+      handleUpdateSingleUhDate(index, prev);
+    }
+  };
+
+  const handleClearSingleUhDate = (index: number) => {
+    handleUpdateSingleUhDate(index, "");
+  };
+
+  // Bulk date helpers
+  const handleGenerateRoutineDates = () => {
+    if (!autoGenStartDate) {
+      showToast("Silakan tentukan tanggal mulai terlebih dahulu.");
+      return;
+    }
+    const newDates: string[] = [];
+    let curDate = autoGenStartDate;
+
+    try {
+      const parts = curDate.split("-");
+      let d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      if (autoGenSkipWeekend) {
+        if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+        else if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        curDate = `${y}-${m}-${day}`;
+      }
+    } catch {}
+
+    newDates.push(curDate);
+
+    for (let i = 1; i < 12; i++) {
+      curDate = addDaysToDate(curDate, autoGenInterval, autoGenSkipWeekend);
+      newDates.push(curDate);
+    }
+
+    setBatchUhDates(newDates);
+    showToast("Jadwal UH 1 s/d UH 12 berhasil dibuat secara otomatis!");
+  };
+
+  const handleResetToDefaultDates = () => {
+    setBatchUhDates([...defaultUhDates]);
+    setBatchPtsDate("2026-10-05");
+    setBatchPasDate("2026-12-15");
+    showToast("Tanggal evaluasi dikembalikan ke standar kalender.");
+  };
+
+  const handleClearAllUhDates = () => {
+    setBatchUhDates(Array(12).fill(""));
+    showToast("Semua tanggal UH 1 s/d 12 dikosongkan.");
+  };
+
+  const handleSetAllToToday = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    const todayStr = `${y}-${m}-${d}`;
+    setBatchUhDates(Array(12).fill(todayStr));
+    showToast("Seluruh tanggal UH 1 s/d 12 diisi tanggal hari ini.");
+  };
+
+  // Save Batch Dates with Scope Support
   const handleSaveBatchDates = (e: React.FormEvent) => {
     e.preventDefault();
     let updatedList = [...nilaiParalelList];
 
-    // Find all matching student records or create if missing
-    activeRecords.forEach((rec) => {
-      const index = updatedList.findIndex((r) => r.id === rec.id);
-      if (index >= 0) {
-        updatedList[index] = {
-          ...updatedList[index],
-          uhDates: [...batchUhDates],
-          ptsDate: batchPtsDate,
-          pasDate: batchPasDate
-        };
-      } else {
-        updatedList.push({
-          ...rec,
-          uhDates: [...batchUhDates],
-          ptsDate: batchPtsDate,
-          pasDate: batchPasDate
-        });
+    // Determine target classes based on batchDateScope
+    let targetClasses: string[] = [selectedKelasParalel];
+    if (batchDateScope === "level") {
+      const currentLevel = selectedKelasParalel.charAt(0);
+      const group = allParallelClasses.find((g) => g.level.includes(currentLevel));
+      if (group) {
+        targetClasses = group.items;
       }
+    } else if (batchDateScope === "all") {
+      targetClasses = allParallelClasses.flatMap((g) => g.items);
+    }
+
+    let countUpdated = 0;
+
+    targetClasses.forEach((cls) => {
+      const classStudents = students.filter((st) => normalizeClassId(st.kelasId) === cls);
+      classStudents.forEach((st) => {
+        countUpdated++;
+        const index = updatedList.findIndex(
+          (r) =>
+            r.siswaNisn === st.nisn &&
+            r.kelasParalel === cls &&
+            r.semester === selectedSemester &&
+            r.mapel === selectedMapel
+        );
+
+        if (index >= 0) {
+          updatedList[index] = {
+            ...updatedList[index],
+            uhDates: [...batchUhDates],
+            ptsDate: batchPtsDate,
+            pasDate: batchPasDate
+          };
+        } else {
+          updatedList.push({
+            id: `nil_${st.nisn}_sem${selectedSemester}_${cls}`,
+            siswaNisn: st.nisn,
+            siswaNama: st.nama,
+            kelasParalel: cls,
+            semester: selectedSemester,
+            mapel: selectedMapel,
+            uhList: [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80],
+            uhDates: [...batchUhDates],
+            pts: 80,
+            ptsDate: batchPtsDate,
+            pas: 80,
+            pasDate: batchPasDate,
+            kkm: 75
+          });
+        }
+      });
     });
 
     onUpdateNilaiParalelList(updatedList);
     setIsBatchDateModalOpen(false);
-    showToast(`Berhasil menerapkan tanggal pelaksanaan untuk seluruh siswa Kelas ${selectedKelasParalel}`);
+
+    if (batchDateScope === "all") {
+      showToast(`Berhasil menerapkan tanggal evaluasi untuk SELURUH kelas paralel (${countUpdated} data siswa)`);
+    } else if (batchDateScope === "level") {
+      showToast(`Berhasil menerapkan tanggal evaluasi untuk Tingkat Kelas ${selectedKelasParalel.charAt(0)} (${countUpdated} data siswa)`);
+    } else {
+      showToast(`Berhasil menerapkan tanggal evaluasi untuk Kelas ${selectedKelasParalel} (${countUpdated} data siswa)`);
+    }
   };
 
   // Handle student selection change in modal
@@ -797,14 +1054,21 @@ export default function PenilaianSemesterParalel({
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num, idx) => {
                   const dateVal = activeRecords[0]?.uhDates?.[idx];
                   return (
-                    <th key={num} className="p-1 border-r border-slate-200 w-11 bg-emerald-50/50" title={dateVal ? `UH ${num}: Tanggal ${dateVal}` : `UH ${num}`}>
-                      <div className="font-extrabold text-[9px] text-emerald-950">UH{num}</div>
+                    <th
+                      key={num}
+                      onClick={() => handleOpenBatchDateModal(idx)}
+                      className="p-1 border-r border-slate-200 w-11 bg-emerald-50/50 hover:bg-emerald-100/80 cursor-pointer transition group"
+                      title={dateVal ? `UH ${num}: Tanggal ${dateVal} (Klik untuk atur/edit tanggal)` : `UH ${num} (Klik untuk atur tanggal)`}
+                    >
+                      <div className="font-extrabold text-[9px] text-emerald-950 group-hover:text-emerald-700 flex items-center justify-center gap-0.5">
+                        UH{num}
+                      </div>
                       {dateVal ? (
-                        <div className="text-[7.5px] text-emerald-800 font-semibold leading-none mt-0.5">
+                        <div className="text-[7.5px] text-emerald-800 font-semibold leading-none mt-0.5 group-hover:underline">
                           {formatDateShort(dateVal)}
                         </div>
                       ) : (
-                        <div className="text-[7px] text-slate-300 leading-none mt-0.5">-</div>
+                        <div className="text-[7px] text-slate-400 leading-none mt-0.5 group-hover:text-emerald-700">+tgl</div>
                       )}
                     </th>
                   );
@@ -812,24 +1076,38 @@ export default function PenilaianSemesterParalel({
                 <th className="p-1.5 border-r border-slate-200 w-12 bg-emerald-100/80 text-emerald-900 font-black">
                   Rerata
                 </th>
-                <th className="p-1 border-r border-slate-200 w-12 bg-amber-50/80 text-amber-950 font-bold" title={activeRecords[0]?.ptsDate ? `PTS: Tanggal ${activeRecords[0].ptsDate}` : "PTS"}>
-                  <div className="font-extrabold text-[9px]">PTS</div>
+                <th
+                  onClick={() => {
+                    handleOpenBatchDateModal();
+                    setFilterUhTab("ujian");
+                  }}
+                  className="p-1 border-r border-slate-200 w-12 bg-amber-50/80 hover:bg-amber-100 cursor-pointer transition text-amber-950 font-bold group"
+                  title={activeRecords[0]?.ptsDate ? `PTS: Tanggal ${activeRecords[0].ptsDate} (Klik untuk atur/edit)` : "PTS (Klik untuk atur tanggal)"}
+                >
+                  <div className="font-extrabold text-[9px] group-hover:text-amber-700">PTS</div>
                   {activeRecords[0]?.ptsDate ? (
-                    <div className="text-[7.5px] text-amber-800 font-semibold leading-none mt-0.5">
+                    <div className="text-[7.5px] text-amber-800 font-semibold leading-none mt-0.5 group-hover:underline">
                       {formatDateShort(activeRecords[0].ptsDate)}
                     </div>
                   ) : (
-                    <div className="text-[7px] text-slate-300 leading-none mt-0.5">-</div>
+                    <div className="text-[7px] text-slate-400 leading-none mt-0.5 group-hover:text-amber-700">+tgl</div>
                   )}
                 </th>
-                <th className="p-1 border-r border-slate-200 w-12 bg-amber-50/80 text-amber-950 font-bold" title={activeRecords[0]?.pasDate ? `PAS: Tanggal ${activeRecords[0].pasDate}` : "PAS"}>
-                  <div className="font-extrabold text-[9px]">PAS</div>
+                <th
+                  onClick={() => {
+                    handleOpenBatchDateModal();
+                    setFilterUhTab("ujian");
+                  }}
+                  className="p-1 border-r border-slate-200 w-12 bg-amber-50/80 hover:bg-amber-100 cursor-pointer transition text-amber-950 font-bold group"
+                  title={activeRecords[0]?.pasDate ? `PAS: Tanggal ${activeRecords[0].pasDate} (Klik untuk atur/edit)` : "PAS (Klik untuk atur tanggal)"}
+                >
+                  <div className="font-extrabold text-[9px] group-hover:text-amber-700">PAS</div>
                   {activeRecords[0]?.pasDate ? (
-                    <div className="text-[7.5px] text-amber-800 font-semibold leading-none mt-0.5">
+                    <div className="text-[7.5px] text-amber-800 font-semibold leading-none mt-0.5 group-hover:underline">
                       {formatDateShort(activeRecords[0].pasDate)}
                     </div>
                   ) : (
-                    <div className="text-[7px] text-slate-300 leading-none mt-0.5">-</div>
+                    <div className="text-[7px] text-slate-400 leading-none mt-0.5 group-hover:text-amber-700">+tgl</div>
                   )}
                 </th>
               </tr>
@@ -1287,98 +1565,509 @@ export default function PenilaianSemesterParalel({
 
       {/* MODAL: BATCH EVALUATION DATE SETTER FOR CLASS */}
       {isBatchDateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 my-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                  Atur Tanggal Pelaksanaan Evaluasi Kelas {selectedKelasParalel}
-                </h3>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Atur tanggal untuk UH 1 s/d 12, PTS, dan PAS serentak untuk seluruh siswa {selectedKelasParalel} ({selectedMapel} - Semester {selectedSemester})
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 my-6 max-h-[92vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4 shrink-0">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="p-1.5 bg-amber-100 text-amber-800 rounded-xl">
+                    <Calendar className="w-5 h-5 text-amber-700" />
+                  </span>
+                  <h3 className="text-base font-black text-slate-900">
+                    Atur & Edit Tanggal Pelaksanaan Evaluasi (UH 1 - 12, PTS, PAS)
+                  </h3>
+                  <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 font-extrabold text-[11px] rounded-full border border-emerald-300">
+                    Kelas {selectedKelasParalel}
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 font-bold text-[11px] rounded-full">
+                    Semester {selectedSemester}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium">
+                  Sesuaikan tanggal pelaksanaan untuk setiap Ulangan Harian (UH 1 s/d 12), PTS, dan PAS sesuai jadwal pembelajaran {selectedMapel}.
                 </p>
               </div>
               <button
                 onClick={() => setIsBatchDateModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveBatchDates} className="space-y-4 text-xs">
-              {/* UH 1-12 Dates */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-extrabold uppercase text-emerald-800 block">
-                  Tanggal Pelaksanaan Ulangan Harian & Tugas (UH 1 - 12)
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-60 overflow-y-auto">
-                  {batchUhDates.map((dVal, i) => (
-                    <div key={i} className="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs space-y-1">
-                      <span className="text-[10px] font-bold text-slate-700 block text-center">
-                        UH {i + 1}
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveBatchDates} className="space-y-4 overflow-y-auto pr-1 py-1 text-xs flex-1">
+              {/* Quick Assistant & Generation Toolbar */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>Aksi Cepat & Generator Jadwal:</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowAutoRoutine(!showAutoRoutine)}
+                      className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition flex items-center gap-1 border ${
+                        showAutoRoutine
+                          ? "bg-amber-500 text-slate-950 border-amber-400 shadow-sm"
+                          : "bg-white hover:bg-slate-100 text-slate-700 border-slate-300"
+                      }`}
+                    >
+                      <Wand2 className="w-3.5 h-3.5" />
+                      <span>{showAutoRoutine ? "Tutup Generator" : "Generator Otomatis (Rutin)"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetToDefaultDates}
+                      className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-300 transition flex items-center gap-1"
+                      title="Kembalikan ke susunan tanggal bawaan kurikulum semester"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Bawaan</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSetAllToToday}
+                      className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-300 transition flex items-center gap-1"
+                      title="Isi seluruh UH 1 s/d 12 dengan tanggal hari ini"
+                    >
+                      <CalendarDays className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Hari Ini ke Semua</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearAllUhDates}
+                      className="px-2.5 py-1.5 bg-white hover:bg-red-50 text-red-600 font-bold text-[11px] rounded-xl border border-red-200 transition flex items-center gap-1"
+                      title="Kosongkan seluruh tanggal UH"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                      <span>Kosongkan</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Generator Details Panel */}
+                {showAutoRoutine && (
+                  <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 space-y-3 transition">
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-[11px] text-amber-950 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-amber-700" />
+                        Atur Pola Berkala untuk UH 1 s/d UH 12:
                       </span>
+                      <span className="text-[10px] text-amber-800">
+                        Otomatis mengisi tanggal berurutan dari UH 1 ke UH 12
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-amber-900 mb-1">
+                          Tanggal Mulai (UH 1):
+                        </label>
+                        <input
+                          type="date"
+                          value={autoGenStartDate}
+                          onChange={(e) => setAutoGenStartDate(e.target.value)}
+                          className="w-full p-1.5 rounded-lg border border-amber-300 bg-white font-bold text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-amber-900 mb-1">
+                          Jeda Evaluasi:
+                        </label>
+                        <select
+                          value={autoGenInterval}
+                          onChange={(e) => setAutoGenInterval(Number(e.target.value))}
+                          className="w-full p-1.5 rounded-lg border border-amber-300 bg-white font-bold text-xs text-slate-800"
+                        >
+                          <option value={7}>Setiap 1 Minggu (7 Hari)</option>
+                          <option value={14}>Setiap 2 Minggu (14 Hari - Rekomendasi)</option>
+                          <option value={21}>Setiap 3 Minggu (21 Hari)</option>
+                          <option value={30}>Setiap 1 Bulan (30 Hari)</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col justify-end space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer text-[10px] font-bold text-amber-950 select-none">
+                          <input
+                            type="checkbox"
+                            checked={autoGenSkipWeekend}
+                            onChange={(e) => setAutoGenSkipWeekend(e.target.checked)}
+                            className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4"
+                          />
+                          <span>Hindari Libur (Sabtu/Ahad ➡️ Senin)</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleGenerateRoutineDates}
+                          className="w-full py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-lg shadow-sm border border-amber-400 transition flex items-center justify-center gap-1.5"
+                        >
+                          <Wand2 className="w-3.5 h-3.5" />
+                          <span>Terapkan Pola ke UH 1 - 12</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tab Navigation Filter */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFilterUhTab("all")}
+                    className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition ${
+                      filterUhTab === "all"
+                        ? "bg-slate-900 text-white shadow-sm"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                    }`}
+                  >
+                    Semua Evaluasi (12 UH & Ujian)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterUhTab("uh1-6")}
+                    className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition ${
+                      filterUhTab === "uh1-6"
+                        ? "bg-emerald-700 text-white shadow-sm"
+                        : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800"
+                    }`}
+                  >
+                    UH 1 s/d 6 (Paruh Awal)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterUhTab("uh7-12")}
+                    className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition ${
+                      filterUhTab === "uh7-12"
+                        ? "bg-emerald-700 text-white shadow-sm"
+                        : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800"
+                    }`}
+                  >
+                    UH 7 s/d 12 (Paruh Akhir)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterUhTab("ujian")}
+                    className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition ${
+                      filterUhTab === "ujian"
+                        ? "bg-amber-600 text-white shadow-sm"
+                        : "bg-amber-50 hover:bg-amber-100 text-amber-900"
+                    }`}
+                  >
+                    PTS & PAS Saja
+                  </button>
+                </div>
+
+                <span className="text-[10px] text-slate-400 font-bold">
+                  Klik tombol aksi di setiap kartu untuk ubah cepat
+                </span>
+              </div>
+
+              {/* UH 1-12 Dates Cards Grid */}
+              {filterUhTab !== "ujian" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-black uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Tanggal Pelaksanaan Ulangan Harian (UH)</span>
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-medium">
+                      Format: Tanggal / Bulan / Tahun
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {batchUhDates.map((dVal, i) => {
+                      // Filter checks
+                      if (filterUhTab === "uh1-6" && i >= 6) return null;
+                      if (filterUhTab === "uh7-12" && i < 6) return null;
+
+                      const dayInfo = getDayInfo(dVal);
+
+                      return (
+                        <div
+                          key={i}
+                          className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-emerald-400 transition space-y-2 flex flex-col justify-between"
+                        >
+                          {/* Card Header: UH Badge & Day info */}
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-950 rounded-lg text-xs font-black border border-emerald-300">
+                              UH {i + 1}
+                            </span>
+
+                            {/* Day Status Tag */}
+                            {dayInfo.isSunday ? (
+                              <span className="text-[9.5px] font-extrabold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                Ahad (Libur)
+                              </span>
+                            ) : dayInfo.isSaturday ? (
+                              <span className="text-[9.5px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                Sabtu
+                              </span>
+                            ) : dVal ? (
+                              <span className="text-[9.5px] font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                {dayInfo.dayName}
+                              </span>
+                            ) : (
+                              <span className="text-[9.5px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full italic">
+                                Belum diatur
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Date Input */}
+                          <div className="space-y-1">
+                            <input
+                              type="date"
+                              value={dVal || ""}
+                              onChange={(e) => handleUpdateSingleUhDate(i, e.target.value)}
+                              className="w-full p-2 rounded-xl border border-slate-300 text-xs font-black text-slate-900 bg-slate-50/50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                            />
+                            <div className="text-[10px] font-medium text-slate-500 px-0.5 truncate" title={dayInfo.formatted}>
+                              {dayInfo.formatted}
+                            </div>
+                          </div>
+
+                          {/* Quick Mini Actions for this UH */}
+                          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-slate-100 text-[9.5px]">
+                            <button
+                              type="button"
+                              onClick={() => handleSetSingleUhToday(i)}
+                              className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded"
+                              title="Set ke tanggal hari ini"
+                            >
+                              Hari Ini
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddDaysToSingleUh(i, 7)}
+                              className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded"
+                              title="Tambah 7 hari dari tanggal saat ini"
+                            >
+                              +7h
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddDaysToSingleUh(i, 14)}
+                              className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded"
+                              title="Tambah 14 hari dari tanggal saat ini"
+                            >
+                              +14h
+                            </button>
+                            {i > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyPrevUhDate(i)}
+                                className="px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded flex items-center gap-0.5"
+                                title={`Salin tanggal dari UH ${i}`}
+                              >
+                                <Copy className="w-2.5 h-2.5" />
+                                <span>Salin UH{i}</span>
+                              </button>
+                            )}
+                            {dVal && (
+                              <button
+                                type="button"
+                                onClick={() => handleClearSingleUhDate(i)}
+                                className="px-1.5 py-0.5 hover:bg-red-50 text-red-600 font-bold rounded ml-auto"
+                                title="Kosongkan tanggal UH ini"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* PTS & PAS Dates (Sumatif) */}
+              {(filterUhTab === "all" || filterUhTab === "ujian") && (
+                <div className="space-y-2 pt-2">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                    <Award className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Tanggal Penilaian Sumatif (PTS & PAS)</span>
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* PTS Card */}
+                    <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-amber-700" />
+                          Penilaian Tengah Semester (PTS)
+                        </span>
+                        {getDayInfo(batchPtsDate).dayName !== "-" && (
+                          <span className="text-[10px] font-extrabold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                            {getDayInfo(batchPtsDate).dayName}
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="date"
-                        value={dVal || ""}
-                        onChange={(e) => {
-                          const updated = [...batchUhDates];
-                          updated[i] = e.target.value;
-                          setBatchUhDates(updated);
-                        }}
-                        className="w-full p-1 rounded border border-slate-200 text-[10px] font-medium text-slate-800 bg-slate-50 text-center"
+                        value={batchPtsDate || ""}
+                        onChange={(e) => setBatchPtsDate(e.target.value)}
+                        className="w-full p-2.5 rounded-xl border border-amber-300 text-xs font-black text-slate-900 bg-white focus:ring-2 focus:ring-amber-500"
                       />
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="font-medium text-amber-900">{getDayInfo(batchPtsDate).formatted}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const now = new Date();
+                            const y = now.getFullYear();
+                            const m = String(now.getMonth() + 1).padStart(2, "0");
+                            const d = String(now.getDate()).padStart(2, "0");
+                            setBatchPtsDate(`${y}-${m}-${d}`);
+                          }}
+                          className="px-2 py-0.5 bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold rounded-lg transition"
+                        >
+                          Hari Ini
+                        </button>
+                      </div>
                     </div>
-                  ))}
+
+                    {/* PAS Card */}
+                    <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                          <Award className="w-3.5 h-3.5 text-amber-700" />
+                          Penilaian Akhir Semester (PAS)
+                        </span>
+                        {getDayInfo(batchPasDate).dayName !== "-" && (
+                          <span className="text-[10px] font-extrabold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                            {getDayInfo(batchPasDate).dayName}
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="date"
+                        value={batchPasDate || ""}
+                        onChange={(e) => setBatchPasDate(e.target.value)}
+                        className="w-full p-2.5 rounded-xl border border-amber-300 text-xs font-black text-slate-900 bg-white focus:ring-2 focus:ring-amber-500"
+                      />
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="font-medium text-amber-900">{getDayInfo(batchPasDate).formatted}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const now = new Date();
+                            const y = now.getFullYear();
+                            const m = String(now.getMonth() + 1).padStart(2, "0");
+                            const d = String(now.getDate()).padStart(2, "0");
+                            setBatchPasDate(`${y}-${m}-${d}`);
+                          }}
+                          className="px-2 py-0.5 bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold rounded-lg transition"
+                        >
+                          Hari Ini
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Scope Selector: Apply to Which Class? */}
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                <label className="text-[11px] font-black text-slate-800 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Jangkauan Penerapan Tanggal:</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <label
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition ${
+                      batchDateScope === "current"
+                        ? "bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400"
+                        : "bg-white border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="dateScope"
+                      checked={batchDateScope === "current"}
+                      onChange={() => setBatchDateScope("current")}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-[11px]">Hanya Kelas {selectedKelasParalel}</div>
+                      <div className="text-[9.5px] text-slate-500">Khusus siswa di kelas aktif ini</div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition ${
+                      batchDateScope === "level"
+                        ? "bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400"
+                        : "bg-white border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="dateScope"
+                      checked={batchDateScope === "level"}
+                      onChange={() => setBatchDateScope("level")}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-[11px]">
+                        Tingkat {selectedKelasParalel.charAt(0)} ({allParallelClasses.find(g => g.level.includes(selectedKelasParalel.charAt(0)))?.items.join(', ')})
+                      </div>
+                      <div className="text-[9.5px] text-slate-500">Seluruh kelas paralel jenjang ini</div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition ${
+                      batchDateScope === "all"
+                        ? "bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400"
+                        : "bg-white border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="dateScope"
+                      checked={batchDateScope === "all"}
+                      onChange={() => setBatchDateScope("all")}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-[11px]">Seluruh Kelas Paralel</div>
+                      <div className="text-[9.5px] text-slate-500">Semua kelas (7A s/d 9D)</div>
+                    </div>
+                  </label>
                 </div>
               </div>
 
-              {/* PTS & PAS Dates */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-200 space-y-1.5">
-                  <label className="block text-[10px] font-black text-amber-950">
-                    Tanggal PTS (Penilaian Tengah Semester)
-                  </label>
-                  <input
-                    type="date"
-                    value={batchPtsDate || ""}
-                    onChange={(e) => setBatchPtsDate(e.target.value)}
-                    className="w-full p-2 rounded-lg border border-amber-300 text-xs font-bold text-slate-800 bg-white"
-                  />
-                </div>
-
-                <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-200 space-y-1.5">
-                  <label className="block text-[10px] font-black text-amber-950">
-                    Tanggal PAS (Penilaian Akhir Semester)
-                  </label>
-                  <input
-                    type="date"
-                    value={batchPasDate || ""}
-                    onChange={(e) => setBatchPasDate(e.target.value)}
-                    className="w-full p-2 rounded-lg border border-amber-300 text-xs font-bold text-slate-800 bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-1 rounded border border-amber-200">
-                  ⚡ Berlaku untuk {activeRecords.length} siswa di Kelas {selectedKelasParalel}
+              {/* Modal Actions Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 shrink-0">
+                <span className="text-[11px] text-amber-800 font-bold bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-600" />
+                  <span>
+                    {batchDateScope === "current" && `Berlaku untuk Kelas ${selectedKelasParalel} (${selectedMapel} - Semester ${selectedSemester})`}
+                    {batchDateScope === "level" && `Berlaku serentak untuk seluruh Kelas Tingkat ${selectedKelasParalel.charAt(0)}`}
+                    {batchDateScope === "all" && `Berlaku serentak untuk seluruh kelas (7A s.d. 9D)`}
+                  </span>
                 </span>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2 ml-auto">
                   <button
                     type="button"
                     onClick={() => setIsBatchDateModalOpen(false)}
-                    className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-extrabold hover:bg-slate-50 transition"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md border border-amber-400"
+                    className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black shadow-md border border-emerald-600 transition flex items-center gap-2"
                   >
-                    Terapkan Ke Seluruh Siswa
+                    <Save className="w-4 h-4" />
+                    <span>Simpan & Terapkan Tanggal</span>
                   </button>
                 </div>
               </div>
@@ -1509,111 +2198,283 @@ export default function PenilaianSemesterParalel({
         </div>
       )}
       {isPrintViewOpen && (
-        <div className="fixed inset-0 z-50 bg-white p-8 overflow-y-auto text-black font-serif print:p-0 print:m-0 print:static">
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Header Kop Sekolah */}
-            <div className="text-center border-b-4 border-double border-black pb-4 space-y-1">
-              <h1 className="text-base font-bold uppercase tracking-wider">
-                PEMERINTAH KABUPATEN WAY KANAN – DINAS PENDIDIKAN
-              </h1>
-              <h2 className="text-lg font-black uppercase tracking-wide">
-                UPT SMP NEGERI 2 REBANG TANGKAS
-              </h2>
-              <p className="text-xs italic font-sans">
-                Jl. Lintas Rebang Tangkas, Rebang Tangkas, Kabupaten Way Kanan, Lampung 34791
-              </p>
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn print:p-0 print:bg-white print:static print:inset-auto">
+          {/* CSS Print Styles Override */}
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              #printable-rekap-paralel, #printable-rekap-paralel * {
+                visibility: visible !important;
+              }
+              #printable-rekap-paralel {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 14px 18px !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                box-shadow: none !important;
+                border: none !important;
+              }
+              .print\\:hidden {
+                display: none !important;
+              }
+              table {
+                page-break-inside: auto;
+                width: 100% !important;
+              }
+              tr {
+                page-break-inside: avoid !important;
+                page-break-after: auto !important;
+              }
+              thead {
+                display: table-header-group !important;
+              }
+            }
+          `}</style>
+
+          <div className="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl space-y-5 border border-slate-200 print:shadow-none print:border-none print:p-0 print:max-w-none my-8">
+            {/* Modal Toolbar Header (Hidden in Print) */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4 print:hidden">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl">
+                  <Printer className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                    Pratinjau Dokumen Cetak Rekap Nilai Siswa
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Kelas Paralel {selectedKelasParalel} • Semester {selectedSemester} ({selectedSemester === "1" ? "Ganjil" : "Genap"})
+                  </p>
+                </div>
+              </div>
+
+              {/* Tanggal Cetak Setting & Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="text-[11px] font-bold text-slate-600">Tanggal Cetak:</span>
+                  <input
+                    type="date"
+                    value={printTanggalCetak}
+                    onChange={(e) => setPrintTanggalCetak(e.target.value)}
+                    className="text-xs font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const y = now.getFullYear();
+                      const m = String(now.getMonth() + 1).padStart(2, "0");
+                      const d = String(now.getDate()).padStart(2, "0");
+                      setPrintTanggalCetak(`${y}-${m}-${d}`);
+                    }}
+                    className="text-[10px] font-extrabold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition cursor-pointer"
+                  >
+                    Hari Ini
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak Dokumen</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPrintViewOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                  title="Tutup Pratinjau"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            {/* Document Title */}
-            <div className="text-center space-y-1">
-              <h3 className="text-sm font-bold uppercase underline">
-                LAPORAN REKAPITULASI HASIL BELAJAR PESERTA DIDIK
-              </h3>
-              <p className="text-xs font-sans">
-                Mata Pelajaran: <strong>{selectedMapel}</strong> | Kelas Paralel: <strong>{selectedKelasParalel}</strong> | Semester: <strong>{selectedSemester}</strong>
-              </p>
-            </div>
+            {/* Printable Document Container */}
+            <div id="printable-rekap-paralel" className="space-y-4 text-black font-sans">
+              {/* Header Kop Sekolah */}
+              <div className="text-center border-b-4 border-double border-black pb-3 space-y-1">
+                <h1 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                  PEMERINTAH KABUPATEN WAY KANAN – DINAS PENDIDIKAN
+                </h1>
+                <h2 className="text-base sm:text-lg font-black uppercase tracking-wide text-black">
+                  UPT SMP NEGERI 2 REBANG TANGKAS
+                </h2>
+                <p className="text-[11px] italic font-serif text-slate-600">
+                  Jl. Lintas Rebang Tangkas, Rebang Tangkas, Kabupaten Way Kanan, Lampung 34791
+                </p>
+              </div>
 
-            {/* Table Print */}
-            <table className="w-full border-collapse border border-black text-[10px] font-sans">
-              <thead>
-                <tr className="bg-gray-200 text-center font-bold">
-                  <th className="border border-black p-1" rowSpan={2}>No</th>
-                  <th className="border border-black p-1" rowSpan={2}>Nama Siswa</th>
-                  <th className="border border-black p-1" rowSpan={2}>NISN</th>
-                  <th className="border border-black p-1" colSpan={12}>Ulangan Harian & Tugas (1-12)</th>
-                  <th className="border border-black p-1" rowSpan={2}>Rerata UH</th>
-                  <th className="border border-black p-1" rowSpan={2}>PTS</th>
-                  <th className="border border-black p-1" rowSpan={2}>PAS</th>
-                  <th className="border border-black p-1" rowSpan={2}>Nilai Akhir</th>
-                  <th className="border border-black p-1" rowSpan={2}>KKM</th>
-                </tr>
-                <tr className="bg-gray-100 text-center font-bold">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
-                    <th key={num} className="border border-black p-1">{num}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {activeRecords.map((rec, i) => {
-                  const rerataUH = computeRerataUH(rec.uhList);
-                  const nilaiAkhir = computeNilaiAkhir(rerataUH, rec.pts, rec.pas);
-                  const kkmVal = rec.kkm || 75;
+              {/* Document Title & Metadata */}
+              <div className="space-y-2">
+                <div className="text-center">
+                  <h3 className="text-sm font-bold uppercase underline tracking-wide">
+                    LAPORAN REKAPITULASI HASIL PENILAIAN PESERTA DIDIK
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-700">
+                    Mata Pelajaran: {selectedMapel}
+                  </p>
+                </div>
 
-                  return (
-                    <tr key={rec.id} className="text-center">
-                      <td className="border border-black p-1">{i + 1}</td>
-                      <td className="border border-black p-1 text-left font-bold">{rec.siswaNama}</td>
-                      <td className="border border-black p-1">{rec.siswaNisn}</td>
-                      {rec.uhList.map((score, sIdx) => (
-                        <td
-                          key={sIdx}
-                          className={`border border-black p-1 ${
-                            score >= kkmVal ? "text-black font-bold" : "text-red-600 font-black bg-red-50"
-                          }`}
-                        >
-                          {score}
-                        </td>
-                      ))}
-                      <td className={`border border-black p-1 ${rerataUH >= kkmVal ? "text-black font-bold" : "text-red-600 font-black"}`}>
-                        {rerataUH}
-                      </td>
-                      <td className={`border border-black p-1 ${rec.pts >= kkmVal ? "text-black font-bold" : "text-red-600 font-black"}`}>
-                        {rec.pts}
-                      </td>
-                      <td className={`border border-black p-1 ${rec.pas >= kkmVal ? "text-black font-bold" : "text-red-600 font-black"}`}>
-                        {rec.pas}
-                      </td>
-                      <td className={`border border-black p-1 font-extrabold ${nilaiAkhir >= kkmVal ? "text-black" : "text-red-600"}`}>
-                        {nilaiAkhir}
-                      </td>
-                      <td className="border border-black p-1 font-bold">{kkmVal}</td>
+                {/* Metadata Box with Tanggal Cetak */}
+                <div className="bg-slate-50 border border-black p-2.5 rounded text-[10px] grid grid-cols-2 gap-2">
+                  <div className="space-y-0.5">
+                    <p>Kelas Paralel: <strong>{selectedKelasParalel}</strong></p>
+                    <p>Semester: <strong>{selectedSemester === "1" ? "1 (Ganjil)" : "2 (Genap)"}</strong></p>
+                    <p>Tahun Pelajaran: <strong>2026/2027</strong></p>
+                    <p>Standar KKM: <strong>75 (Tuntas)</strong></p>
+                  </div>
+                  <div className="space-y-0.5 text-right">
+                    <p>Tanggal Cetak: <strong className="text-black bg-amber-100/90 px-1.5 py-0.5 rounded border border-amber-300 font-bold">{formatDateIndoLong(printTanggalCetak)}</strong></p>
+                    <p>Jumlah Siswa: <strong>{activeRecords.length} Murid</strong></p>
+                    <p>Guru Pengampu: <strong>Sadiqul Alim, S.Pd.I., M.Pd.</strong></p>
+                    <p>NIP: <strong>19790917 201407 1 004</strong></p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table Print with Dates */}
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-black text-[9px]">
+                  <thead>
+                    <tr className="bg-gray-200 text-center font-bold">
+                      <th className="border border-black p-1 w-6" rowSpan={2}>No</th>
+                      <th className="border border-black p-1 min-w-[130px]" rowSpan={2}>Nama Siswa</th>
+                      <th className="border border-black p-1 w-20" rowSpan={2}>NISN</th>
+                      <th className="border border-black p-1" colSpan={12}>
+                        Ulangan Harian & Tugas (UH 1 - 12)
+                      </th>
+                      <th className="border border-black p-1 w-10" rowSpan={2}>Rerata UH</th>
+                      <th className="border border-black p-1 w-12" rowSpan={2}>
+                        <div>PTS</div>
+                        {activeRecords[0]?.ptsDate && (
+                          <div className="text-[7px] font-normal text-slate-700 mt-0.5">
+                            {formatDateShort(activeRecords[0].ptsDate)}
+                          </div>
+                        )}
+                      </th>
+                      <th className="border border-black p-1 w-12" rowSpan={2}>
+                        <div>PAS</div>
+                        {activeRecords[0]?.pasDate && (
+                          <div className="text-[7px] font-normal text-slate-700 mt-0.5">
+                            {formatDateShort(activeRecords[0].pasDate)}
+                          </div>
+                        )}
+                      </th>
+                      <th className="border border-black p-1 w-11" rowSpan={2}>Nilai Akhir</th>
+                      <th className="border border-black p-1 w-9" rowSpan={2}>KKM</th>
+                      <th className="border border-black p-1 w-12" rowSpan={2}>Ket.</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    <tr className="bg-gray-100 text-center font-bold">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num, idx) => {
+                        const dateVal = activeRecords[0]?.uhDates?.[idx];
+                        return (
+                          <th key={num} className="border border-black p-0.5 min-w-[24px]">
+                            <div className="font-extrabold text-[8.5px] leading-tight">UH{num}</div>
+                            <div className="text-[7px] font-normal text-slate-700 leading-tight">
+                              {dateVal ? formatDateShort(dateVal) : "-"}
+                            </div>
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeRecords.map((rec, i) => {
+                      const rerataUH = computeRerataUH(rec.uhList);
+                      const nilaiAkhir = computeNilaiAkhir(rerataUH, rec.pts, rec.pas);
+                      const kkmVal = rec.kkm || 75;
+                      const isTuntas = nilaiAkhir >= kkmVal;
 
-            {/* Signature Block */}
-            <div className="grid grid-cols-2 gap-8 text-xs pt-8 font-sans">
-              <div className="text-center space-y-12">
-                <p>Mengetahui,<br />Kepala UPT SMPN 2 Rebang Tangkas</p>
-                <p className="font-bold underline">Drs. H. Mulyadi, M.M.<br /><span className="font-normal text-[10px]">NIP. 19700318 199503 1 002</span></p>
+                      return (
+                        <tr key={rec.id} className="text-center">
+                          <td className="border border-black p-1">{i + 1}</td>
+                          <td className="border border-black p-1 text-left font-bold">{rec.siswaNama}</td>
+                          <td className="border border-black p-1 font-mono text-[8.5px]">{rec.siswaNisn}</td>
+                          {rec.uhList.map((score, sIdx) => (
+                            <td
+                              key={sIdx}
+                              className={`border border-black p-0.5 ${
+                                score >= kkmVal ? "text-black font-bold" : "text-red-600 font-black bg-red-50"
+                              }`}
+                            >
+                              {score}
+                            </td>
+                          ))}
+                          <td className={`border border-black p-1 ${rerataUH >= kkmVal ? "text-black font-bold" : "text-red-600 font-black"}`}>
+                            {rerataUH}
+                          </td>
+                          <td className={`border border-black p-1 ${rec.pts >= kkmVal ? "text-black font-bold" : "text-red-600 font-black"}`}>
+                            {rec.pts}
+                          </td>
+                          <td className={`border border-black p-1 ${rec.pas >= kkmVal ? "text-black font-bold" : "text-red-600 font-black"}`}>
+                            {rec.pas}
+                          </td>
+                          <td className={`border border-black p-1 font-black ${nilaiAkhir >= kkmVal ? "text-black" : "text-red-600"}`}>
+                            {nilaiAkhir}
+                          </td>
+                          <td className="border border-black p-1 font-bold">{kkmVal}</td>
+                          <td className={`border border-black p-1 text-[8px] font-bold ${isTuntas ? "text-emerald-800" : "text-red-600"}`}>
+                            {isTuntas ? "Tuntas" : "Remedial"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <div className="text-center space-y-12">
-                <p>Rebang Tangkas, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br />Guru Mata Pelajaran PAI</p>
-                <p className="font-bold underline">Sadiqul Alim, S.Pd.I., M.Pd.<br /><span className="font-normal text-[10px]">NIP. 19790917 201407 1 004</span></p>
-              </div>
-            </div>
 
-            {/* Print Control Bar */}
-            <div className="pt-6 text-center print:hidden">
-              <button
-                onClick={() => setIsPrintViewOpen(false)}
-                className="px-6 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-lg"
-              >
-                ← Kembali Ke Halaman Aplikasi
-              </button>
+              {/* Rincian Tanggal Pelaksanaan Penilaian Box */}
+              <div className="border border-slate-400 p-2 rounded text-[8.5px] text-slate-800 bg-slate-50 space-y-1">
+                <p className="font-bold text-[9px] uppercase tracking-wide text-black border-b border-slate-300 pb-0.5">
+                  Jadwal Tanggal Pelaksanaan Penilaian Terdaftar:
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n, i) => (
+                    <div key={n}>
+                      UH {n}: <strong>{formatDateFullIndo(activeRecords[0]?.uhDates?.[i])}</strong>
+                    </div>
+                  ))}
+                  <div>PTS: <strong>{formatDateFullIndo(activeRecords[0]?.ptsDate)}</strong></div>
+                  <div>PAS: <strong>{formatDateFullIndo(activeRecords[0]?.pasDate)}</strong></div>
+                </div>
+              </div>
+
+              {/* Signature Block */}
+              <div className="grid grid-cols-2 gap-8 text-xs pt-4 font-sans break-inside-avoid">
+                <div className="text-center space-y-12">
+                  <p>Mengetahui,<br />Kepala UPT SMPN 2 Rebang Tangkas</p>
+                  <p className="font-bold underline">
+                    Drs. H. Mulyadi, M.M.<br />
+                    <span className="font-normal text-[10px]">NIP. 19700318 199503 1 002</span>
+                  </p>
+                </div>
+                <div className="text-center space-y-12">
+                  <p>
+                    Rebang Tangkas, {formatDateIndoDateOnly(printTanggalCetak)}<br />
+                    Guru Mata Pelajaran PAI & Budi Pekerti
+                  </p>
+                  <p className="font-bold underline">
+                    Sadiqul Alim, S.Pd.I., M.Pd.<br />
+                    <span className="font-normal text-[10px]">NIP. 19790917 201407 1 004</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer Note */}
+              <div className="pt-2 border-t border-slate-300 text-[8px] text-slate-500 flex justify-between items-center">
+                <span>Dokumen Resmi Rekap Nilai Akademik PAI • UPT SMPN 2 Rebang Tangkas</span>
+                <span>Dicetak pada: {formatDateIndoLong(printTanggalCetak)}</span>
+              </div>
             </div>
           </div>
         </div>

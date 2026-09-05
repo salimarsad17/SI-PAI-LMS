@@ -18,7 +18,10 @@ import {
   Pause,
   Award,
   BookOpen,
-  Layers
+  Layers,
+  Printer,
+  Calendar,
+  X
 } from "lucide-react";
 import { RekapNilaiTotal, Siswa, Kelas, PengumpulanTugas, NilaiKhususPai, NilaiSemesterParalel } from "../../types";
 import PenilaianSemesterParalel from "./PenilaianSemesterParalel";
@@ -68,6 +71,64 @@ export default function RekapNilai({
   const [lmsComment, setLmsComment] = useState<string>("");
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioPlaybackProgress, setAudioPlaybackProgress] = useState(30);
+
+  // Print Mode State for LMS View
+  const [isPrintLmsOpen, setIsPrintLmsOpen] = useState(false);
+  const [printTanggalCetakLms, setPrintTanggalCetakLms] = useState<string>(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  });
+
+  const formatDateIndoFull = (dateStr?: string) => {
+    if (!dateStr) return "-";
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return d.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      }
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatDateIndoDateOnly = (dateStr?: string) => {
+    if (!dateStr) return "-";
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return d.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      }
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   // Merge students list with rekapNilai records to ensure ALL current students in Data Siswa are included with their latest name
   const classStudents = selectedClass === "Semua"
@@ -174,10 +235,11 @@ export default function RekapNilai({
 
   // Automated Excel format exporter
   const handleExportExcel = () => {
+    const todayFormatted = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }).toUpperCase();
     const csvContent = [
       "REKAPITULASI NILAI PENDIDIKAN AGAMA ISLAM & BUDI PEKERTI",
       `UPT SMPN 2 REBANG TANGKAS - KELAS ${selectedClass}`,
-      "TANGGAL EKSPOR: 13 JULI 2026",
+      `TANGGAL EKSPOR: ${todayFormatted}`,
       "",
       "NISN,Nama Siswa,Kuis (Formatif),Tugas (Formatif),Diskusi (Formatif),PTS (Sumatif),PAS (Sumatif),Hafalan Qur'an,Praktik Sholat,Praktik Wudhu,Nilai Akhir Rata-Rata",
       ...filteredRecords.map((r) => {
@@ -470,11 +532,21 @@ export default function RekapNilai({
             {/* Export Excel */}
             <button
               onClick={handleExportExcel}
-              className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-100/50 flex items-center gap-1 transition"
+              className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-100/50 flex items-center gap-1 transition cursor-pointer"
               id="btn-export-excel"
             >
               <FileSpreadsheet className="w-4 h-4" />
               Ekspor ERapor
+            </button>
+
+            {/* Print Rekap */}
+            <button
+              onClick={() => setIsPrintLmsOpen(true)}
+              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg border border-slate-200 flex items-center gap-1.5 transition cursor-pointer"
+              id="btn-print-rekap-lms"
+            >
+              <Printer className="w-4 h-4 text-slate-600" />
+              Cetak Rekap
             </button>
           </div>
         </div>
@@ -654,6 +726,240 @@ export default function RekapNilai({
         </div>
       </div>
         </>
+      )}
+
+      {/* Print Modal for LMS View Mode */}
+      {isPrintLmsOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn print:p-0 print:bg-white print:static print:inset-auto">
+          {/* CSS Print Styles Override */}
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              #printable-rekap-lms, #printable-rekap-lms * {
+                visibility: visible !important;
+              }
+              #printable-rekap-lms {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 14px 18px !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                box-shadow: none !important;
+                border: none !important;
+              }
+              .print\\:hidden {
+                display: none !important;
+              }
+              table {
+                page-break-inside: auto;
+                width: 100% !important;
+              }
+              tr {
+                page-break-inside: avoid !important;
+                page-break-after: auto !important;
+              }
+              thead {
+                display: table-header-group !important;
+              }
+            }
+          `}</style>
+
+          <div className="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl space-y-5 border border-slate-200 print:shadow-none print:border-none print:p-0 print:max-w-none my-8">
+            {/* Modal Toolbar Header (Hidden in Print) */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4 print:hidden">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl">
+                  <Printer className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                    Pratinjau Cetak Rekapitulasi Nilai PAI
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Kelas: {selectedClass} • Tahun Pelajaran 2026/2027
+                  </p>
+                </div>
+              </div>
+
+              {/* Tanggal Cetak Setting & Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="text-[11px] font-bold text-slate-600">Tanggal Cetak:</span>
+                  <input
+                    type="date"
+                    value={printTanggalCetakLms}
+                    onChange={(e) => setPrintTanggalCetakLms(e.target.value)}
+                    className="text-xs font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const y = now.getFullYear();
+                      const m = String(now.getMonth() + 1).padStart(2, "0");
+                      const d = String(now.getDate()).padStart(2, "0");
+                      setPrintTanggalCetakLms(`${y}-${m}-${d}`);
+                    }}
+                    className="text-[10px] font-extrabold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition cursor-pointer"
+                  >
+                    Hari Ini
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak Dokumen</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPrintLmsOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                  title="Tutup Pratinjau"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Document Container */}
+            <div id="printable-rekap-lms" className="space-y-4 text-black font-sans">
+              {/* Header Kop Sekolah */}
+              <div className="text-center border-b-4 border-double border-black pb-3 space-y-1">
+                <h1 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                  PEMERINTAH KABUPATEN WAY KANAN – DINAS PENDIDIKAN
+                </h1>
+                <h2 className="text-base sm:text-lg font-black uppercase tracking-wide text-black">
+                  UPT SMP NEGERI 2 REBANG TANGKAS
+                </h2>
+                <p className="text-[11px] italic font-serif text-slate-600">
+                  Jl. Lintas Rebang Tangkas, Rebang Tangkas, Kabupaten Way Kanan, Lampung 34791
+                </p>
+              </div>
+
+              {/* Document Title & Metadata */}
+              <div className="space-y-2">
+                <div className="text-center">
+                  <h3 className="text-sm font-bold uppercase underline tracking-wide">
+                    LAPORAN REKAPITULASI EVALUASI BELAJAR PAI & BUDI PEKERTI
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-700">
+                    Kelas: {selectedClass} • Tahun Pelajaran 2026/2027
+                  </p>
+                </div>
+
+                {/* Metadata Box with Tanggal Cetak */}
+                <div className="bg-slate-50 border border-black p-2.5 rounded text-[10px] grid grid-cols-2 gap-2">
+                  <div className="space-y-0.5">
+                    <p>Mata Pelajaran: <strong>Pendidikan Agama Islam & Budi Pekerti</strong></p>
+                    <p>Kelas: <strong>{selectedClass}</strong></p>
+                    <p>Semester: <strong>1 (Ganjil)</strong></p>
+                    <p>Standar KKM: <strong>75 (Tuntas)</strong></p>
+                  </div>
+                  <div className="space-y-0.5 text-right">
+                    <p>Tanggal Cetak: <strong className="text-black bg-amber-100/90 px-1.5 py-0.5 rounded border border-amber-300 font-bold">{formatDateIndoFull(printTanggalCetakLms)}</strong></p>
+                    <p>Total Peserta Didik: <strong>{filteredRecords.length} Siswa</strong></p>
+                    <p>Guru Pengampu: <strong>Sadiqul Alim, S.Pd.I., M.Pd.</strong></p>
+                    <p>NIP: <strong>19790917 201407 1 004</strong></p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Master Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-black text-[9.5px]">
+                  <thead>
+                    <tr className="bg-gray-200 text-center font-bold">
+                      <th className="border border-black p-1 w-7">No</th>
+                      <th className="border border-black p-1 w-20">NISN</th>
+                      <th className="border border-black p-1 min-w-[140px]">Nama Siswa</th>
+                      <th className="border border-black p-1 w-12">Kuis</th>
+                      <th className="border border-black p-1 w-12">Tugas</th>
+                      <th className="border border-black p-1 w-12">Diskusi</th>
+                      <th className="border border-black p-1 w-12">PTS</th>
+                      <th className="border border-black p-1 w-12">PAS</th>
+                      <th className="border border-black p-1 w-14">Hafalan</th>
+                      <th className="border border-black p-1 w-14">Sholat</th>
+                      <th className="border border-black p-1 w-14">Wudhu</th>
+                      <th className="border border-black p-1 w-14">Nilai Akhir</th>
+                      <th className="border border-black p-1 w-16">Predikat</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRecords.map((rec, idx) => {
+                      const avg = Math.round(
+                        (rec.formatifKuis +
+                          rec.formatifTugas +
+                          rec.formatifDiskusi +
+                          rec.sumatifPts +
+                          rec.sumatifPas) / 5
+                      );
+                      const predikat = avg >= 88 ? "Sangat Baik" : avg >= 75 ? "Baik" : "Perlu Bimbingan";
+
+                      return (
+                        <tr key={rec.siswaNisn} className="text-center">
+                          <td className="border border-black p-1">{idx + 1}</td>
+                          <td className="border border-black p-1 font-mono">{rec.siswaNisn}</td>
+                          <td className="border border-black p-1 text-left font-bold">{rec.siswaNama}</td>
+                          <td className="border border-black p-1">{rec.formatifKuis}</td>
+                          <td className="border border-black p-1">{rec.formatifTugas}</td>
+                          <td className="border border-black p-1">{rec.formatifDiskusi}</td>
+                          <td className="border border-black p-1">{rec.sumatifPts}</td>
+                          <td className="border border-black p-1">{rec.sumatifPas}</td>
+                          <td className="border border-black p-1">{rec.hafalanJuzAmmaScore}</td>
+                          <td className="border border-black p-1">{rec.praktikSholat}</td>
+                          <td className="border border-black p-1">{rec.praktikWudhu}</td>
+                          <td className={`border border-black p-1 font-black ${avg >= 75 ? "text-black" : "text-red-600"}`}>
+                            {avg}
+                          </td>
+                          <td className={`border border-black p-1 text-[8.5px] font-bold ${avg >= 75 ? "text-emerald-800" : "text-red-600"}`}>
+                            {predikat}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Signature Block */}
+              <div className="grid grid-cols-2 gap-8 text-xs pt-4 font-sans break-inside-avoid">
+                <div className="text-center space-y-12">
+                  <p>Mengetahui,<br />Kepala UPT SMPN 2 Rebang Tangkas</p>
+                  <p className="font-bold underline">
+                    Drs. H. Mulyadi, M.M.<br />
+                    <span className="font-normal text-[10px]">NIP. 19700318 199503 1 002</span>
+                  </p>
+                </div>
+                <div className="text-center space-y-12">
+                  <p>
+                    Rebang Tangkas, {formatDateIndoDateOnly(printTanggalCetakLms)}<br />
+                    Guru Mata Pelajaran PAI & Budi Pekerti
+                  </p>
+                  <p className="font-bold underline">
+                    Sadiqul Alim, S.Pd.I., M.Pd.<br />
+                    <span className="font-normal text-[10px]">NIP. 19790917 201407 1 004</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer Note */}
+              <div className="pt-2 border-t border-slate-300 text-[8px] text-slate-500 flex justify-between items-center">
+                <span>Dokumen Resmi Rekap Nilai Akademik PAI • UPT SMPN 2 Rebang Tangkas</span>
+                <span>Dicetak pada: {formatDateIndoFull(printTanggalCetakLms)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

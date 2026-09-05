@@ -34,7 +34,8 @@ import {
   Download,
   AlertCircle,
   CheckCircle2,
-  FileUp
+  FileUp,
+  ChevronDown
 } from "lucide-react";
 import { DataSekolah, Guru, Kelas, Siswa, CatatanSikapSiswa, JurnalIbadahHarian, RekapNilaiTotal } from "../../types";
 import { DataService } from "../../data/initialData";
@@ -184,27 +185,33 @@ export default function DataDasar({
     showToast(`Data kelas "${editClassNama}" berhasil diperbarui!`);
   };
 
+  // Modal Konfirmasi Hapus State
+  const [siswaToDelete, setSiswaToDelete] = useState<Siswa | null>(null);
+  const [classToDelete, setClassToDelete] = useState<{ id: string; nama: string; studentCount: number } | null>(null);
+
   const handleDeleteClass = (classId: string, className: string) => {
     const activeStudentCount = students.filter((s) => s.kelasId === classId && s.statusKeaktifan === "Aktif").length;
-    let confirmMsg = `Apakah Anda yakin ingin menghapus "${className}"?`;
-    if (activeStudentCount > 0) {
-      confirmMsg += `\n\nPeringatan: Terdapat ${activeStudentCount} siswa aktif di kelas ini.`;
-    }
+    setClassToDelete({ id: classId, nama: className, studentCount: activeStudentCount });
+  };
 
-    if (confirm(confirmMsg)) {
-      const updated = classes.filter((c) => c.id !== classId);
-      if (onUpdateClasses) {
-        onUpdateClasses(updated);
-      }
-      DataService.saveKelas(updated);
-      showToast(`Kelas "${className}" telah berhasil dihapus.`);
+  const confirmDeleteClass = () => {
+    if (!classToDelete) return;
+    const { id: classId, nama: className } = classToDelete;
+    const updated = classes.filter((c) => c.id !== classId);
+    if (onUpdateClasses) {
+      onUpdateClasses(updated);
     }
+    DataService.saveKelas(updated);
+    setClassToDelete(null);
+    showToast(`Kelas "${className}" telah berhasil dihapus.`);
   };
 
   // Student Filter & Add & Edit States
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddingSiswa, setIsAddingSiswa] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [newSiswa, setNewSiswa] = useState<Siswa>({
     nisn: "",
     nama: "",
@@ -252,18 +259,22 @@ export default function DataDasar({
   };
 
   const handleDeleteSiswa = (siswa: Siswa) => {
-    if (
-      confirm(
-        `Apakah Anda yakin ingin menghapus data siswa "${siswa.nama}" (NISN: ${siswa.nisn}) dari database?`
-      )
-    ) {
-      const updatedStudents = students.filter((s) => s.nisn !== siswa.nisn);
-      if (onUpdateStudents) {
-        onUpdateStudents(updatedStudents);
-      }
-      DataService.saveSiswa(updatedStudents);
-      showToast(`Data siswa "${siswa.nama}" telah berhasil dihapus.`);
+    setSiswaToDelete(siswa);
+  };
+
+  const confirmDeleteSiswa = () => {
+    if (!siswaToDelete) return;
+    const targetNisn = (siswaToDelete.nisn || "").trim();
+    const targetNama = siswaToDelete.nama;
+
+    const updatedStudents = students.filter((s) => (s.nisn || "").trim() !== targetNisn);
+    if (onUpdateStudents) {
+      onUpdateStudents(updatedStudents);
     }
+    DataService.saveSiswa(updatedStudents);
+
+    setSiswaToDelete(null);
+    showToast(`Data siswa "${targetNama}" (NISN: ${targetNisn}) telah berhasil dihapus.`);
   };
 
   // Upload/Import Student Bulk States & Handlers
@@ -503,15 +514,120 @@ export default function DataDasar({
     parseCsvOrTextData(val, defaultImportClass);
   };
 
-  const handleDownloadTemplate = () => {
+  // 1. Download Template Excel (.xlsx) dengan Sheet Petunjuk & Kelas
+  const handleDownloadTemplateXls = () => {
+    // Sheet 1: Template Data Siswa
+    const templateRows = [
+      {
+        "NISN": "0098765431",
+        "Nama Lengkap": "Ahmad Fauzi",
+        "Kelas": "VII-A",
+        "Jenis Kelamin": "Laki-laki",
+        "Agama": "Islam",
+        "Kontak Orang Tua": "081234567890"
+      },
+      {
+        "NISN": "0098765432",
+        "Nama Lengkap": "Siti Aminah",
+        "Kelas": "VII-A",
+        "Jenis Kelamin": "Perempuan",
+        "Agama": "Islam",
+        "Kontak Orang Tua": "081234567891"
+      },
+      {
+        "NISN": "0098765433",
+        "Nama Lengkap": "Rizky Pratama",
+        "Kelas": "VII-B",
+        "Jenis Kelamin": "Laki-laki",
+        "Agama": "Islam",
+        "Kontak Orang Tua": "081234567892"
+      },
+      {
+        "NISN": "0098765434",
+        "Nama Lengkap": "Dewi Lestari",
+        "Kelas": "VII-B",
+        "Jenis Kelamin": "Perempuan",
+        "Agama": "Islam",
+        "Kontak Orang Tua": "081234567893"
+      },
+      {
+        "NISN": "0098765435",
+        "Nama Lengkap": "Muhammad Hafizh",
+        "Kelas": "VIII-A",
+        "Jenis Kelamin": "Laki-laki",
+        "Agama": "Islam",
+        "Kontak Orang Tua": "081234567894"
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateRows);
+    ws["!cols"] = [
+      { wch: 15 }, // NISN
+      { wch: 28 }, // Nama Lengkap
+      { wch: 12 }, // Kelas
+      { wch: 16 }, // Jenis Kelamin
+      { wch: 12 }, // Agama
+      { wch: 20 }  // Kontak Orang Tua
+    ];
+
+    // Ensure NISN text type to preserve leading zeros
+    const range = XLSX.utils.decode_range(ws["!ref"] || "A1:F6");
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: 0 });
+      if (ws[cellAddress]) {
+        ws[cellAddress].t = "s";
+      }
+    }
+
+    // Sheet 2: Petunjuk Pengisian
+    const petunjukRows = [
+      ["PETUNJUK PENGISIAN TEMPLATE DATA SISWA"],
+      ["SI-PAI & LMS - UPT SMP NEGERI 2 REBANG TANGKAS"],
+      [],
+      ["Nama Kolom", "Status", "Aturan Pengisian", "Contoh Nilai"],
+      ["NISN", "Wajib", "10 digit angka unik Nomor Induk Siswa Nasional", "0098765431"],
+      ["Nama Lengkap", "Wajib", "Nama lengkap siswa tanpa singkatan gelar", "Ahmad Fauzi"],
+      ["Kelas", "Wajib", "ID atau Nama kelas yang terdaftar di sekolah", "VII-A / VII-B / VIII-A / VIII-B"],
+      ["Jenis Kelamin", "Wajib", "Ketik 'Laki-laki' atau 'Perempuan'", "Laki-laki"],
+      ["Agama", "Wajib", "Agama siswa (Default: Islam)", "Islam"],
+      ["Kontak Orang Tua", "Opsional", "Nomor WhatsApp / telepon aktif orang tua", "081234567890"],
+      [],
+      ["CATATAN PENTING:"],
+      ["1. Jangan menghapus baris judul (header) pada baris pertama di sheet 'Template_Data_Siswa'."],
+      ["2. Format sel NISN harus berupa Teks (String) agar digit 0 di depan tidak terhapus otomatis."],
+      ["3. Berkas ini dapat langsung diunggah melalui tombol 'Upload Data Siswa' pada aplikasi SI-PAI."]
+    ];
+    const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukRows);
+    wsPetunjuk["!cols"] = [{ wch: 18 }, { wch: 12 }, { wch: 50 }, { wch: 25 }];
+
+    // Sheet 3: Referensi Kelas
+    const kelasRows = [
+      ["ID Kelas", "Nama Kelas", "Wali Kelas", "NIP Wali Kelas", "Kapasitas Siswa"],
+      ...classes.map((c) => [c.id, c.nama || c.id, c.waliKelasNama || "-", c.waliKelasNip || "-", `${c.totalSiswa || 0}/${c.kuota || 32}`])
+    ];
+    const wsKelas = XLSX.utils.aoa_to_sheet(kelasRows);
+    wsKelas["!cols"] = [{ wch: 12 }, { wch: 16 }, { wch: 30 }, { wch: 22 }, { wch: 16 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template_Data_Siswa");
+    XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk_Pengisian");
+    XLSX.utils.book_append_sheet(wb, wsKelas, "Daftar_Kelas_Tersedia");
+
+    XLSX.writeFile(wb, "Template_Upload_Siswa_SIPAI.xlsx");
+    showToast("Template Excel (.xlsx) berhasil diunduh!");
+  };
+
+  // 2. Download Template CSV (.csv)
+  const handleDownloadTemplateCsv = () => {
     const csvHeader = "NISN,Nama Lengkap,Kelas,Jenis Kelamin,Agama,Kontak Orang Tua\n";
     const sampleRows =
       "0098765431,Ahmad Fauzi,VII-A,Laki-laki,Islam,081234567890\n" +
       "0098765432,Siti Aminah,VII-A,Perempuan,Islam,081234567891\n" +
       "0098765433,Rizky Pratama,VII-B,Laki-laki,Islam,081234567892\n" +
-      "0098765434,Dewi Lestari,VII-B,Perempuan,Islam,081234567893\n";
+      "0098765434,Dewi Lestari,VII-B,Perempuan,Islam,081234567893\n" +
+      "0098765435,Muhammad Hafizh,VIII-A,Laki-laki,Islam,081234567894\n";
 
-    const blob = new Blob([csvHeader + sampleRows], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csvHeader + sampleRows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
@@ -519,6 +635,100 @@ export default function DataDasar({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast("Template CSV berhasil diunduh!");
+  };
+
+  // Backward compatibility
+  const handleDownloadTemplate = handleDownloadTemplateXls;
+
+  // 3. Export Data Siswa Aktual ke Excel (.xlsx)
+  const handleExportDataSiswaXls = () => {
+    const listToExport = filteredStudents;
+    if (listToExport.length === 0) {
+      alert("Tidak ada data siswa untuk diunduh pada filter saat ini.");
+      return;
+    }
+
+    const titleFilter = selectedClassFilter === "Semua" ? "SEMUA KELAS" : `KELAS ${selectedClassFilter}`;
+    const fileFilter = selectedClassFilter === "Semua" ? "SEMUA_KELAS" : `KELAS_${selectedClassFilter}`;
+
+    const headerInfo = [
+      ["DATA MASTER SISWA - SISTEM INFORMASI PENDIDIKAN AGAMA ISLAM & LMS"],
+      ["UPT SMP NEGERI 2 REBANG TANGKAS"],
+      [`Lingkup Data: ${titleFilter} | Jumlah: ${listToExport.length} Siswa Terdaftar`],
+      [`Tanggal Ekspor: ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`],
+      []
+    ];
+
+    const tableRows = listToExport.map((s, idx) => ({
+      "No": idx + 1,
+      "NISN": s.nisn,
+      "Nama Lengkap": s.nama,
+      "Kelas": s.kelasId,
+      "Jenis Kelamin": s.gender,
+      "Agama": s.agama || "Islam",
+      "Status": s.statusKeaktifan || "Aktif",
+      "Kontak Orang Tua": s.kontakOrangTua || "-"
+    }));
+
+    const ws = XLSX.utils.aoa_to_sheet(headerInfo);
+    XLSX.utils.sheet_add_json(ws, tableRows, { origin: "A6" });
+
+    ws["!cols"] = [
+      { wch: 6 },  // No
+      { wch: 16 }, // NISN
+      { wch: 30 }, // Nama Lengkap
+      { wch: 12 }, // Kelas
+      { wch: 16 }, // Jenis Kelamin
+      { wch: 12 }, // Agama
+      { wch: 14 }, // Status
+      { wch: 22 }  // Kontak Orang Tua
+    ];
+
+    // Format NISN as text
+    const range = XLSX.utils.decode_range(ws["!ref"] || "A6:H100");
+    for (let R = 5; R <= range.e.r; ++R) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: 1 });
+      if (ws[cellAddress]) {
+        ws[cellAddress].t = "s";
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data_Siswa");
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `DATA_SISWA_SIPAI_${fileFilter}_${dateStr}.xlsx`);
+    showToast(`Berhasil mengunduh ${listToExport.length} data siswa (.xlsx)!`);
+  };
+
+  // 4. Export Data Siswa Aktual ke CSV (.csv)
+  const handleExportDataSiswaCsv = () => {
+    const listToExport = filteredStudents;
+    if (listToExport.length === 0) {
+      alert("Tidak ada data siswa untuk diunduh pada filter saat ini.");
+      return;
+    }
+
+    const fileFilter = selectedClassFilter === "Semua" ? "SEMUA_KELAS" : `KELAS_${selectedClassFilter}`;
+    const header = "No,NISN,Nama Lengkap,Kelas,Jenis Kelamin,Agama,Status Keaktifan,Kontak Orang Tua\n";
+    const rows = listToExport
+      .map(
+        (s, idx) =>
+          `${idx + 1},="${s.nisn}","${s.nama.replace(/"/g, '""')}","${s.kelasId}","${s.gender}","${s.agama || "Islam"}","${s.statusKeaktifan || "Aktif"}","${s.kontakOrangTua || "-"}"`
+      )
+      .join("\n");
+
+    const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("download", `DATA_SISWA_SIPAI_${fileFilter}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Berhasil mengunduh ${listToExport.length} data siswa (.csv)!`);
   };
 
   const handleConfirmImport = () => {
@@ -673,6 +883,7 @@ export default function DataDasar({
         <div class="title">
           <h4>LEMBAR HASIL EVALUASI DIGITAL PAI & BUDI PEKERTI</h4>
           <p>TAHUN AJARAN 2026/2027 • SEMESTER GANJIL</p>
+          <div style="font-size: 8.5pt; color: #4b5563; margin-top: 3px;">Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
         </div>
 
         <table class="bio-table">
@@ -771,7 +982,7 @@ export default function DataDasar({
             <p class="sig-nip">NIP. ${sekolah.nipKepsek}</p>
           </div>
           <div class="sig-col">
-            <p>Way Kanan, 13 Juli 2026<br/>Guru Wali Kelas ${activeRaporSiswa.kelasId}</p>
+            <p>Way Kanan, ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br/>Guru Wali Kelas ${activeRaporSiswa.kelasId}</p>
             <div class="sig-space"></div>
             <p class="sig-name">${guru.nama}</p>
             <p class="sig-nip">NIP. ${guru.nip}</p>
@@ -1358,15 +1569,128 @@ export default function DataDasar({
                 ))}
               </select>
 
-              {/* Download CSV Template Button */}
-              <button
-                onClick={handleDownloadTemplate}
-                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 flex items-center gap-1 transition"
-                title="Unduh Format Template Excel/CSV"
-              >
-                <Download className="w-3.5 h-3.5 text-slate-600" />
-                <span className="hidden md:inline">Template CSV</span>
-              </button>
+              {/* Unduh Data Siswa Dropdown Button */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExportDropdown(!showExportDropdown);
+                    setShowTemplateDropdown(false);
+                  }}
+                  className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-300 flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                  title="Unduh Data Siswa Terdaftar (Excel / CSV)"
+                  id="btn-unduh-data-siswa"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Unduh Data Siswa</span>
+                  <ChevronDown className="w-3 h-3 text-emerald-600" />
+                </button>
+
+                {showExportDropdown && (
+                  <div className="absolute right-0 mt-1.5 w-60 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30 animate-fadeIn text-xs">
+                    <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                      Unduh Data Siswa ({filteredStudents.length} Siswa)
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleExportDataSiswaXls();
+                        setShowExportDropdown(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold flex items-center gap-2 transition cursor-pointer"
+                      id="btn-export-siswa-xlsx"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <span className="block leading-tight text-emerald-950">Unduh Format Excel (.xlsx)</span>
+                        <span className="text-[10px] text-slate-500 font-normal">Kop sekolah, kolom rapi & teks NISN</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleExportDataSiswaCsv();
+                        setShowExportDropdown(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold flex items-center gap-2 transition cursor-pointer border-t border-slate-100"
+                      id="btn-export-siswa-csv"
+                    >
+                      <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <span className="block leading-tight text-slate-900">Unduh Format CSV (.csv)</span>
+                        <span className="text-[10px] text-slate-500 font-normal">Berkas data teks koma standar</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Template XLS / CSV Dropdown Button */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTemplateDropdown(!showTemplateDropdown);
+                    setShowExportDropdown(false);
+                  }}
+                  className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                  title="Unduh Template Format Upload Siswa"
+                  id="btn-template-siswa"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Template XLS</span>
+                  <ChevronDown className="w-3 h-3 text-slate-500" />
+                </button>
+
+                {showTemplateDropdown && (
+                  <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30 animate-fadeIn text-xs">
+                    <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                      Pilihan Template Impor Siswa
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleDownloadTemplateXls();
+                        setShowTemplateDropdown(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold flex items-center gap-2 transition cursor-pointer"
+                      id="btn-download-template-xls"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <span className="block leading-tight text-emerald-950 font-extrabold">Template Excel (.xlsx)</span>
+                        <span className="text-[10px] text-emerald-700 font-medium">Ada lembar petunjuk & referensi kelas</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleDownloadTemplateCsv();
+                        setShowTemplateDropdown(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold flex items-center gap-2 transition cursor-pointer border-t border-slate-100"
+                      id="btn-download-template-csv"
+                    >
+                      <FileText className="w-4 h-4 text-slate-600 shrink-0" />
+                      <div>
+                        <span className="block leading-tight text-slate-900">Template Format CSV (.csv)</span>
+                        <span className="text-[10px] text-slate-500 font-normal">Format teks sederhana</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Click-outside backdrop for dropdowns */}
+              {(showExportDropdown || showTemplateDropdown) && (
+                <div
+                  className="fixed inset-0 z-20"
+                  onClick={() => {
+                    setShowExportDropdown(false);
+                    setShowTemplateDropdown(false);
+                  }}
+                />
+              )}
 
               {/* Upload Students Button */}
               <button
@@ -2119,24 +2443,38 @@ export default function DataDasar({
             {/* Modal Body (Scrollable) */}
             <div className="space-y-4 overflow-y-auto pr-1 flex-1 text-xs">
               {/* Action options & info banner */}
-              <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/60 rounded-xl flex items-start justify-between gap-3">
+              <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/60 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <span className="block font-bold text-emerald-900 flex items-center gap-1.5">
                     <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-                    Format Berkas Yang Didukung
+                    Format Berkas Yang Didukung (.xlsx, .xls, .csv)
                   </span>
                   <p className="text-[11px] text-emerald-800 leading-relaxed">
-                    Format kolom yang dibaca: <code className="bg-emerald-100 px-1 py-0.5 rounded font-mono font-bold">NISN, Nama, Kelas, Gender (L/P), Agama</code>
+                    Format kolom yang dibaca: <code className="bg-emerald-100 px-1 py-0.5 rounded font-mono font-bold">NISN, Nama Lengkap, Kelas, Gender, Agama, Kontak</code>
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleDownloadTemplate}
-                  className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 rounded-lg shadow-sm shrink-0 flex items-center gap-1 transition"
-                >
-                  <Download className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>Unduh Contoh Template</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplateXls}
+                    className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg shadow-sm shrink-0 flex items-center gap-1.5 transition cursor-pointer text-xs"
+                    title="Unduh Template Lengkap Format Excel (.xlsx)"
+                    id="btn-modal-unduh-template-xls"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Template XLS</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplateCsv}
+                    className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold border border-slate-300 rounded-lg shadow-sm shrink-0 flex items-center gap-1 transition cursor-pointer text-xs"
+                    title="Unduh Format Ringan CSV (.csv)"
+                    id="btn-modal-unduh-template-csv"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Template CSV</span>
+                  </button>
+                </div>
               </div>
 
               {/* Upload Method Tabs */}
@@ -2478,6 +2816,114 @@ export default function DataDasar({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI HAPUS DATA SISWA */}
+      {siswaToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-900">Hapus Data Siswa?</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Apakah Anda yakin ingin menghapus data siswa ini dari database? Tindakan ini akan menghapus siswa dari daftar kelas.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 text-xs">
+              <div className="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+                <span className="text-slate-500 font-medium">Nama Lengkap:</span>
+                <span className="font-bold text-slate-900 text-right">{siswaToDelete.nama}</span>
+              </div>
+              <div className="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+                <span className="text-slate-500 font-medium">NISN:</span>
+                <span className="font-mono font-bold text-emerald-800">{siswaToDelete.nisn}</span>
+              </div>
+              <div className="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+                <span className="text-slate-500 font-medium">Kelas:</span>
+                <span className="font-bold text-slate-800">{siswaToDelete.kelasId}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Status Keaktifan:</span>
+                <span className={`font-bold ${siswaToDelete.statusKeaktifan === "Aktif" ? "text-emerald-700" : "text-slate-500"}`}>
+                  {siswaToDelete.statusKeaktifan}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSiswaToDelete(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                id="btn-batal-hapus-siswa"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteSiswa}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/20 transition flex items-center gap-1.5 cursor-pointer"
+                id="btn-konfirmasi-hapus-siswa"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Ya, Hapus Siswa</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI HAPUS DATA KELAS */}
+      {classToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-900">Hapus Data Kelas?</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Apakah Anda yakin ingin menghapus kelas <span className="font-bold text-slate-900">"{classToDelete.nama}"</span>?
+                </p>
+              </div>
+            </div>
+
+            {classToDelete.studentCount > 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Peringatan:</strong> Terdapat {classToDelete.studentCount} siswa aktif di kelas ini.
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setClassToDelete(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                id="btn-batal-hapus-kelas"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteClass}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-md shadow-red-600/20 transition flex items-center gap-1.5 cursor-pointer"
+                id="btn-konfirmasi-hapus-kelas"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Ya, Hapus Kelas</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
