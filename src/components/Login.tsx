@@ -40,6 +40,8 @@ export default function Login({ onLoginGuru, onLoginSiswa, teachers, students }:
       cleanInput === "123" ||
       cleanInput === "admin" ||
       cleanInput === "guru" ||
+      cleanInput === "sadiqul" ||
+      cleanInput === "alim" ||
       cleanInput === "syukron" ||
       (cleanTeacherNip.length > 0 && cleanInput.length >= 4 && cleanTeacherNip.includes(cleanInput));
 
@@ -152,31 +154,31 @@ export default function Login({ onLoginGuru, onLoginSiswa, teachers, students }:
             </div>
 
             {/* Tab Selection */}
-            <div className="flex rounded-2xl bg-slate-100 p-1 border border-slate-200">
+            <div className="flex rounded-2xl bg-slate-100 p-1.5 border border-slate-200 shadow-inner">
               <button
                 type="button"
                 onClick={() => { setActiveTab("guru"); setError(""); }}
-                className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === "guru"
-                    ? "bg-emerald-700 text-white shadow-md"
+                    ? "bg-gradient-to-r from-emerald-800 to-emerald-950 text-amber-300 shadow-md border border-emerald-700/60"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
                 id="tab-login-guru"
               >
-                <ShieldCheck className="w-4 h-4" />
+                <ShieldCheck className="w-4 h-4 text-amber-400" />
                 Guru / Wali Kelas
               </button>
               <button
                 type="button"
                 onClick={() => { setActiveTab("siswa"); setError(""); }}
-                className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === "siswa"
-                    ? "bg-emerald-700 text-white shadow-md"
+                    ? "bg-gradient-to-r from-emerald-800 to-emerald-950 text-amber-300 shadow-md border border-emerald-700/60"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
                 id="tab-login-siswa"
               >
-                <GraduationCap className="w-4 h-4" />
+                <GraduationCap className="w-4 h-4 text-amber-400" />
                 Siswa (LMS)
               </button>
             </div>
@@ -192,7 +194,7 @@ export default function Login({ onLoginGuru, onLoginSiswa, teachers, students }:
             {activeTab === "guru" ? (
               <form onSubmit={handleGuruLogin} className="space-y-4">
                 <div>
-                  <label htmlFor="nip" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <label htmlFor="nip" className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1.5">
                     NIP / Nomor Registrasi Guru
                   </label>
                   <div className="relative">
@@ -206,26 +208,26 @@ export default function Login({ onLoginGuru, onLoginSiswa, teachers, students }:
                       value={nipInput}
                       onChange={(e) => setNipInput(e.target.value)}
                       placeholder="Masukkan NIP (Contoh: 197909172...)"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition shadow-sm placeholder:text-slate-400"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition shadow-sm placeholder:text-slate-400"
                     />
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-500">
+                  <p className="mt-1 text-[11px] text-slate-500 font-medium">
                     Masukkan NIP terdaftar untuk mengelola perangkat ajar & jurnal kelas.
                   </p>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-3.5 px-4 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-800/20 active:scale-[0.99] group"
+                  className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-400 text-slate-950 py-3.5 px-4 rounded-xl text-sm font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 border border-amber-300 active:scale-[0.99] group cursor-pointer"
                 >
-                  Masuk Aplikasi Guru
+                  <span>Masuk Aplikasi Guru</span>
                   <ArrowRight className="w-4 h-4 transition group-hover:translate-x-1" />
                 </button>
               </form>
             ) : (
               <form onSubmit={handleSiswaLogin} className="space-y-4">
                 <div>
-                  <label htmlFor="nisn" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <label htmlFor="nisn" className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1.5">
                     NISN (Nomor Induk Siswa Nasional)
                   </label>
                   <div className="relative">
@@ -239,19 +241,19 @@ export default function Login({ onLoginGuru, onLoginSiswa, teachers, students }:
                       value={nisnInput}
                       onChange={(e) => setNisnInput(e.target.value)}
                       placeholder="Masukkan 10 digit NISN (Contoh: 0098...)"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition shadow-sm placeholder:text-slate-400"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition shadow-sm placeholder:text-slate-400"
                     />
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-500">
+                  <p className="mt-1 text-[11px] text-slate-500 font-medium">
                     Gunakan NISN aktif Anda untuk belajar di LMS & mencatat Ibadah.
                   </p>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-3.5 px-4 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-800/20 active:scale-[0.99] group"
+                  className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-400 text-slate-950 py-3.5 px-4 rounded-xl text-sm font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 border border-amber-300 active:scale-[0.99] group cursor-pointer"
                 >
-                  Masuk LMS Siswa
+                  <span>Masuk LMS Siswa</span>
                   <ArrowRight className="w-4 h-4 transition group-hover:translate-x-1" />
                 </button>
               </form>
@@ -259,37 +261,37 @@ export default function Login({ onLoginGuru, onLoginSiswa, teachers, students }:
 
             {/* Quick Demo Selector */}
             <div className="pt-4 border-t border-slate-200">
-              <span className="block text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+              <span className="block text-center text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2.5">
                 Akses Uji Coba Cepat (Demo Accounts)
               </span>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   onClick={() => handleQuickLogin("guru", teachers.nip)}
-                  className="p-2.5 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 text-left transition duration-200"
+                  className="p-3 bg-gradient-to-br from-emerald-50 to-amber-50/40 hover:from-emerald-100 hover:to-amber-100/60 rounded-xl border border-emerald-200 text-left transition duration-200 shadow-xs cursor-pointer"
                 >
-                  <span className="block text-[10px] font-extrabold text-emerald-800 uppercase tracking-wide">
+                  <span className="block text-[10px] font-black text-emerald-900 uppercase tracking-wide">
                     Login Guru
                   </span>
-                  <span className="block text-xs font-bold text-slate-800 truncate">
-                    H. Ahmad Syukron
+                  <span className="block text-xs font-black text-slate-900 truncate">
+                    Sadiqul Alim
                   </span>
-                  <span className="block text-[10px] text-slate-500 font-mono">
-                    NIP: ...11005
+                  <span className="block text-[10px] text-slate-600 font-mono font-bold mt-0.5">
+                    NIP: {teachers?.nip ? `...${teachers.nip.slice(-4)}` : "1979...1004"}
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickLogin("siswa", "0098765432")}
-                  className="p-2.5 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-200 text-left transition duration-200"
+                  className="p-3 bg-gradient-to-br from-amber-50 to-yellow-50/40 hover:from-amber-100 hover:to-yellow-100/60 rounded-xl border border-amber-300 text-left transition duration-200 shadow-xs cursor-pointer"
                 >
-                  <span className="block text-[10px] font-extrabold text-amber-800 uppercase tracking-wide">
+                  <span className="block text-[10px] font-black text-amber-950 uppercase tracking-wide">
                     Login Siswa
                   </span>
-                  <span className="block text-xs font-bold text-slate-800 truncate">
+                  <span className="block text-xs font-black text-slate-900 truncate">
                     Farhan Maulana
                   </span>
-                  <span className="block text-[10px] text-slate-500 font-mono">
+                  <span className="block text-[10px] text-slate-600 font-mono font-bold mt-0.5">
                     NISN: 0098765432
                   </span>
                 </button>

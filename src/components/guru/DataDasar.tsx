@@ -801,44 +801,62 @@ export default function DataDasar({
 
   return (
     <div className="space-y-6">
-      {/* Sub tabs navigation */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-px">
+      {/* Sub tabs navigation - Hijau Muda Bergaris Biru */}
+      <div className="flex flex-wrap items-center gap-2.5 p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200 shadow-xs">
         <button
           onClick={() => { setSubTab("guru"); setShowRaporPreview(false); }}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 transition duration-150 ${
-            subTab === "guru" ? "border-emerald-700 text-emerald-800 bg-emerald-50/20" : "border-transparent text-slate-500 hover:text-slate-800"
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2.5 cursor-pointer ${
+            subTab === "guru"
+              ? "bg-emerald-100 text-blue-950 border-2 border-blue-600 shadow-md shadow-blue-600/15 ring-2 ring-blue-400/50 scale-[1.02]"
+              : "bg-emerald-50/80 hover:bg-emerald-100 text-slate-800 hover:text-blue-950 border-2 border-blue-400/80 hover:border-blue-600 shadow-xs"
           }`}
           id="btn-subtab-guru"
         >
-          Data Guru & Sekolah
+          <span className={`w-2.5 h-2.5 rounded-full ${subTab === "guru" ? "bg-blue-600 ring-2 ring-blue-300 animate-pulse" : "bg-blue-400"}`}></span>
+          <User className={`w-4 h-4 ${subTab === "guru" ? "text-blue-700" : "text-blue-600"}`} />
+          <span>Data Guru & Sekolah</span>
         </button>
+
         <button
           onClick={() => { setSubTab("kelas"); setShowRaporPreview(false); }}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 transition duration-150 ${
-            subTab === "kelas" ? "border-emerald-700 text-emerald-800 bg-emerald-50/20" : "border-transparent text-slate-500 hover:text-slate-800"
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2.5 cursor-pointer ${
+            subTab === "kelas"
+              ? "bg-emerald-100 text-blue-950 border-2 border-blue-600 shadow-md shadow-blue-600/15 ring-2 ring-blue-400/50 scale-[1.02]"
+              : "bg-emerald-50/80 hover:bg-emerald-100 text-slate-800 hover:text-blue-950 border-2 border-blue-400/80 hover:border-blue-600 shadow-xs"
           }`}
           id="btn-subtab-kelas"
         >
-          Data Kelas
+          <span className={`w-2.5 h-2.5 rounded-full ${subTab === "kelas" ? "bg-blue-600 ring-2 ring-blue-300 animate-pulse" : "bg-blue-400"}`}></span>
+          <School className={`w-4 h-4 ${subTab === "kelas" ? "text-blue-700" : "text-blue-600"}`} />
+          <span>Data Kelas</span>
         </button>
+
         <button
           onClick={() => { setSubTab("siswa"); setShowRaporPreview(false); }}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 transition duration-150 ${
-            subTab === "siswa" ? "border-emerald-700 text-emerald-800 bg-emerald-50/20" : "border-transparent text-slate-500 hover:text-slate-800"
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2.5 cursor-pointer ${
+            subTab === "siswa"
+              ? "bg-emerald-100 text-blue-950 border-2 border-blue-600 shadow-md shadow-blue-600/15 ring-2 ring-blue-400/50 scale-[1.02]"
+              : "bg-emerald-50/80 hover:bg-emerald-100 text-slate-800 hover:text-blue-950 border-2 border-blue-400/80 hover:border-blue-600 shadow-xs"
           }`}
           id="btn-subtab-siswa"
         >
-          Data Siswa
+          <span className={`w-2.5 h-2.5 rounded-full ${subTab === "siswa" ? "bg-blue-600 ring-2 ring-blue-300 animate-pulse" : "bg-blue-400"}`}></span>
+          <Users className={`w-4 h-4 ${subTab === "siswa" ? "text-blue-700" : "text-blue-600"}`} />
+          <span>Data Siswa</span>
         </button>
+
         <button
           onClick={() => { setSubTab("wali"); setSelectedRaporSiswaNisn(waliKelasSiswa[0]?.nisn || ""); }}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 transition duration-150 flex items-center gap-1.5 ${
-            subTab === "wali" ? "border-emerald-700 text-emerald-800 bg-emerald-50/20" : "border-transparent text-slate-500 hover:text-slate-800"
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2.5 cursor-pointer ${
+            subTab === "wali"
+              ? "bg-emerald-100 text-blue-950 border-2 border-blue-600 shadow-md shadow-blue-600/15 ring-2 ring-blue-400/50 scale-[1.02]"
+              : "bg-emerald-50/80 hover:bg-emerald-100 text-slate-800 hover:text-blue-950 border-2 border-blue-400/80 hover:border-blue-600 shadow-xs"
           }`}
           id="btn-subtab-wali"
         >
-          <Award className="w-4 h-4" />
-          Menu Guru Wali ({guru.waliKelasDi})
+          <span className={`w-2.5 h-2.5 rounded-full ${subTab === "wali" ? "bg-blue-600 ring-2 ring-blue-300 animate-pulse" : "bg-blue-400"}`}></span>
+          <Award className={`w-4 h-4 ${subTab === "wali" ? "text-blue-700" : "text-blue-600"}`} />
+          <span>Menu Guru Wali ({guru.waliKelasDi})</span>
         </button>
       </div>
 

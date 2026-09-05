@@ -208,7 +208,7 @@ export default function BukuNilaiSiswa({
           </div>
           <div>
             <span className="block text-[10px] text-slate-400 font-bold uppercase">Guru Pengampu</span>
-            <span className="text-emerald-800 font-bold truncate block max-w-[120px]" title="H. Ahmad Syukron, M.Pd.">Ahmad Syukron</span>
+            <span className="text-emerald-800 font-bold truncate block max-w-[120px]" title="Sadiqul Alim, S.Pd.I., M.Pd.">Sadiqul Alim</span>
           </div>
         </div>
       </div>

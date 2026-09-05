@@ -333,16 +333,21 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {/* GLOBAL BANNER HEADER */}
-      <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm relative z-20 print:hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-extrabold text-lg shadow-md shadow-emerald-700/10">
+      <header className="bg-white border-b border-slate-200/80 px-6 py-3.5 flex items-center justify-between shadow-sm relative z-20 print:hidden">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-amber-400 flex items-center justify-center font-black text-xl shadow-md shadow-emerald-900/20 border border-emerald-700/40">
             🕌
           </div>
           <div>
-            <h1 className="text-sm font-black tracking-tight text-slate-900 leading-none">
-              SI-PAI & LMS
-            </h1>
-            <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block mt-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-black tracking-tight text-slate-900 leading-none">
+                SI-PAI & LMS
+              </h1>
+              <span className="bg-amber-400/90 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider">
+                V2.6
+              </span>
+            </div>
+            <span className="text-[11px] text-emerald-800 font-extrabold uppercase tracking-wider block mt-0.5">
               UPT SMPN 2 REBANG TANGKAS
             </span>
           </div>
@@ -351,15 +356,15 @@ export default function App() {
         {/* Global Toolbar */}
         <div className="flex items-center gap-3">
           {role !== "GUEST" && (
-            <div className="hidden md:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full text-xs font-bold text-emerald-800 border border-emerald-100/50">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-              Aktif: {role === "GURU" ? "Guru PAI" : `Siswa (${activeSiswaObj?.nama})`}
+            <div className="hidden md:flex items-center gap-2 bg-emerald-50 px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-900 border border-emerald-200">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse ring-2 ring-amber-300/50"></span>
+              <span>Aktif: <strong className="text-slate-900 font-extrabold">{role === "GURU" ? "Guru PAI" : `Siswa (${activeSiswaObj?.nama})`}</strong></span>
             </div>
           )}
 
           <button
             onClick={handleResetApp}
-            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-700 text-xs font-bold rounded-lg transition flex items-center gap-1 shrink-0"
+            className="px-3 py-2 bg-slate-100 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-slate-700 hover:text-amber-900 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-sm"
             title="Reset Database"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -369,7 +374,7 @@ export default function App() {
           {role !== "GUEST" && (
             <button
               onClick={handleLogOut}
-              className="p-2 bg-red-50 hover:bg-red-100 border border-red-100 hover:border-red-200 text-red-700 text-xs font-bold rounded-lg transition flex items-center gap-1.5 shrink-0"
+              className="px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-sm"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Keluar</span>
@@ -389,148 +394,188 @@ export default function App() {
       ) : (
         <div className="flex-1 flex flex-col md:flex-row">
           {/* SIDEBAR NAVIGATION PANEL */}
-          <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-850 justify-between print:hidden">
+          <aside className="w-full md:w-68 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 justify-between print:hidden shadow-lg">
             {/* Nav list */}
-            <div className="p-4 space-y-6">
+            <div className="p-4 space-y-5">
               {role === "GURU" ? (
                 /* GURU SIDEBAR NAVIGATION */
                 <div className="space-y-4">
-                  <div className="pb-4 border-b border-slate-800">
-                    <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Profil Pendidik</span>
-                    <span className="block text-xs font-bold text-white truncate">{guruData.nama}</span>
-                    <span className="block text-[9px] text-emerald-400 font-bold uppercase mt-0.5">Guru PAI Utama</span>
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 shadow-inner">
+                    <span className="block text-[11px] font-black text-amber-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Profil Pendidik
+                    </span>
+                    <span className="block text-sm font-black text-white truncate">{guruData.nama}</span>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-extrabold text-[10px] border border-emerald-800/60">
+                      Guru PAI Utama
+                    </span>
                   </div>
 
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => setGuruActiveTab("dashboard")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        guruActiveTab === "dashboard" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard Guru
-                    </button>
+                  <div>
+                    <span className="block px-2 text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                      Menu Utama Aplikasi
+                    </span>
+                    <div className="space-y-1.5">
+                      <button
+                        onClick={() => setGuruActiveTab("dashboard")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          guruActiveTab === "dashboard"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <LayoutDashboard className={`w-5 h-5 ${guruActiveTab === "dashboard" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Dashboard Guru</span>
+                      </button>
 
-                    <button
-                      onClick={() => setGuruActiveTab("master")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        guruActiveTab === "master" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <Database className="w-4 h-4" />
-                      Data Dasar (Master)
-                    </button>
+                      <button
+                        onClick={() => setGuruActiveTab("master")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          guruActiveTab === "master"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <Database className={`w-5 h-5 ${guruActiveTab === "master" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Data Dasar (Master)</span>
+                      </button>
 
-                    <button
-                      onClick={() => setGuruActiveTab("perangkat")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        guruActiveTab === "perangkat" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      Perangkat Ajar PAI
-                    </button>
+                      <button
+                        onClick={() => setGuruActiveTab("perangkat")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          guruActiveTab === "perangkat"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <BookOpen className={`w-5 h-5 ${guruActiveTab === "perangkat" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Perangkat Ajar PAI</span>
+                      </button>
 
-                    <button
-                      onClick={() => setGuruActiveTab("jurnal")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        guruActiveTab === "jurnal" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <PenTool className="w-4 h-4" />
-                      Jurnal Guru & Siswa
-                    </button>
+                      <button
+                        onClick={() => setGuruActiveTab("jurnal")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          guruActiveTab === "jurnal"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <PenTool className={`w-5 h-5 ${guruActiveTab === "jurnal" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Jurnal Guru & Siswa</span>
+                      </button>
 
-                    <button
-                      onClick={() => setGuruActiveTab("nilai")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        guruActiveTab === "nilai" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <Award className="w-4 h-4" />
-                      Rekap Nilai PAI
-                    </button>
+                      <button
+                        onClick={() => setGuruActiveTab("nilai")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          guruActiveTab === "nilai"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <Award className={`w-5 h-5 ${guruActiveTab === "nilai" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Rekap Nilai PAI</span>
+                      </button>
 
-                    <button
-                      onClick={() => setGuruActiveTab("wali")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        guruActiveTab === "wali" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <UserCheck className="w-4 h-4 text-amber-400" />
-                      Guru Wali
-                    </button>
+                      <button
+                        onClick={() => setGuruActiveTab("wali")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          guruActiveTab === "wali"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <UserCheck className={`w-5 h-5 ${guruActiveTab === "wali" ? "text-amber-400" : "text-amber-400/80"}`} />
+                        <span>Guru Wali</span>
+                      </button>
 
-                    <button
-                      onClick={() => setGuruActiveTab("link")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        guruActiveTab === "link" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <Globe className="w-4 h-4 text-emerald-400" />
-                      Link Layanan (SIAGA, GTK, MyASN)
-                    </button>
+                      <button
+                        onClick={() => setGuruActiveTab("link")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          guruActiveTab === "link"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <Globe className={`w-5 h-5 ${guruActiveTab === "link" ? "text-amber-400" : "text-emerald-400"}`} />
+                        <span>Link Layanan (SIAGA, GTK, MyASN)</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
                 /* SISWA SIDEBAR NAVIGATION */
                 <div className="space-y-4">
-                  <div className="pb-4 border-b border-slate-800">
-                    <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Identitas Siswa</span>
-                    <span className="block text-xs font-bold text-white truncate">{activeSiswaObj?.nama}</span>
-                    <span className="block text-[9px] text-emerald-400 font-bold uppercase mt-0.5">Kelas {activeSiswaObj?.kelasId}</span>
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 shadow-inner">
+                    <span className="block text-[11px] font-black text-amber-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Identitas Siswa
+                    </span>
+                    <span className="block text-sm font-black text-white truncate">{activeSiswaObj?.nama}</span>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-extrabold text-[10px] border border-emerald-800/60">
+                      Kelas {activeSiswaObj?.kelasId}
+                    </span>
                   </div>
 
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => setSiswaActiveTab("dashboard")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        siswaActiveTab === "dashboard" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard Utama
-                    </button>
+                  <div>
+                    <span className="block px-2 text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                      Menu Siswa
+                    </span>
+                    <div className="space-y-1.5">
+                      <button
+                        onClick={() => setSiswaActiveTab("dashboard")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          siswaActiveTab === "dashboard"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <LayoutDashboard className={`w-5 h-5 ${siswaActiveTab === "dashboard" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Dashboard Utama</span>
+                      </button>
 
-                    <button
-                      onClick={() => setSiswaActiveTab("lms")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        siswaActiveTab === "lms" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      Ruang Kelas LMS PAI
-                    </button>
+                      <button
+                        onClick={() => setSiswaActiveTab("lms")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          siswaActiveTab === "lms"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <BookOpen className={`w-5 h-5 ${siswaActiveTab === "lms" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Ruang Kelas LMS PAI</span>
+                      </button>
 
-                    <button
-                      onClick={() => setSiswaActiveTab("ibadah")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        siswaActiveTab === "ibadah" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <Heart className="w-4 h-4" />
-                      Jurnal Ibadah Mandiri
-                    </button>
+                      <button
+                        onClick={() => setSiswaActiveTab("ibadah")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          siswaActiveTab === "ibadah"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <Heart className={`w-5 h-5 ${siswaActiveTab === "ibadah" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Jurnal Ibadah Mandiri</span>
+                      </button>
 
-                    <button
-                      onClick={() => setSiswaActiveTab("nilai")}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 transition ${
-                        siswaActiveTab === "nilai" ? "bg-emerald-800 text-white shadow-md shadow-emerald-800/10" : "hover:bg-slate-800 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <Award className="w-4 h-4" />
-                      Buku Nilai Siswa
-                    </button>
+                      <button
+                        onClick={() => setSiswaActiveTab("nilai")}
+                        className={`w-full text-left px-3.5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3 transition-all ${
+                          siswaActiveTab === "nilai"
+                            ? "bg-gradient-to-r from-emerald-800 to-emerald-900 text-white font-extrabold shadow-md shadow-emerald-950/50 border-l-4 border-amber-400"
+                            : "hover:bg-slate-800/80 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        <Award className={`w-5 h-5 ${siswaActiveTab === "nilai" ? "text-amber-400" : "text-slate-400"}`} />
+                        <span>Buku Nilai Siswa</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Bottom Credit line inside Sidebar */}
-            <div className="p-4 border-t border-slate-800/60 text-[10px] text-slate-500 font-medium">
-              UPT SMPN 2 Rebang Tangkas
-              <span className="block text-[9px] text-slate-600 mt-0.5">Sistem Integrasi PAI v2.6</span>
+            <div className="p-4 border-t border-slate-800 text-xs text-slate-400 font-medium bg-slate-950/50">
+              <span className="text-slate-300 font-bold block">UPT SMPN 2 Rebang Tangkas</span>
+              <span className="block text-[11px] text-amber-400 font-bold mt-0.5">Sistem Integrasi PAI v2.6</span>
             </div>
           </aside>
 

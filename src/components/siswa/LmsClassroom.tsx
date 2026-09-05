@@ -536,7 +536,7 @@ export default function LmsClassroom({
         <div className="p-4 bg-amber-50/40 rounded-xl border border-amber-100/50 text-[11px] text-amber-800 space-y-1">
           <span className="font-extrabold block">Tip Setoran Hafalan:</span>
           <p className="leading-relaxed font-semibold">
-            Gunakan perekam suara interaktif di sebelah kanan untuk menyetor tugas juz amma Anda langsung ke pak guru Ahmad Syukron.
+            Gunakan perekam suara interaktif di sebelah kanan untuk menyetor tugas juz amma Anda langsung ke pak guru Sadiqul Alim.
           </p>
         </div>
       </div>
