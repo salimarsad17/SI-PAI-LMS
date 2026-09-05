@@ -18,7 +18,8 @@ import {
   NilaiSemesterParalel,
   BabPelajaran,
   RekapPertemuanMurid,
-  DataSekolah
+  DataSekolah,
+  UserAccount
 } from "../types";
 
 // Key definitions for LocalStorage
@@ -37,8 +38,33 @@ const STORAGE_KEYS = {
   REKAP_NILAI: "pai_lms_rekap_nilai_data",
   NILAI_PARALEL: "pai_lms_nilai_paralel_data",
   BAB_PELAJARAN: "pai_lms_bab_pelajaran_data",
-  PERTEMUAN_MURID: "pai_lms_pertemuan_murid_data"
+  PERTEMUAN_MURID: "pai_lms_pertemuan_murid_data",
+  ACCOUNTS: "pai_lms_accounts_data"
 };
+
+const defaultAccounts: UserAccount[] = [
+  {
+    id: "acc-guru-default",
+    role: "guru",
+    identifier: "197909172014071004",
+    password: "123",
+    nama: "Sadiqul Alim, S.Pd.I., M.Pd.",
+    kontak: "+62 812-7345-6789",
+    kelasId: "VII-A",
+    registeredAt: "2026-01-01T00:00:00.000Z"
+  },
+  {
+    id: "acc-siswa-default",
+    role: "siswa",
+    identifier: "0098765432",
+    password: "123",
+    nama: "Farhan Maulana",
+    kelasId: "VII-A",
+    gender: "Laki-laki",
+    kontak: "0812-7382-9901",
+    registeredAt: "2026-01-01T00:00:00.000Z"
+  }
+];
 
 // Raw initial data definitions
 const defaultSekolah: DataSekolah = {
@@ -1022,6 +1048,29 @@ export class DataService {
     saveToStorage(STORAGE_KEYS.PERTEMUAN_MURID, data);
   }
 
+  static getAccounts(): UserAccount[] {
+    return loadFromStorage(STORAGE_KEYS.ACCOUNTS, defaultAccounts);
+  }
+
+  static saveAccounts(data: UserAccount[]): void {
+    saveToStorage(STORAGE_KEYS.ACCOUNTS, data);
+  }
+
+  static addAccount(newAccount: UserAccount): UserAccount[] {
+    const current = this.getAccounts();
+    const existingIndex = current.findIndex(
+      (a) => a.role === newAccount.role && a.identifier.trim().toLowerCase() === newAccount.identifier.trim().toLowerCase()
+    );
+    let updated: UserAccount[];
+    if (existingIndex >= 0) {
+      updated = current.map((a, idx) => (idx === existingIndex ? { ...a, ...newAccount } : a));
+    } else {
+      updated = [...current, newAccount];
+    }
+    this.saveAccounts(updated);
+    return updated;
+  }
+
   // Clear all storage and reload with defaults
   static resetAll(): void {
     localStorage.removeItem(STORAGE_KEYS.GURU);
@@ -1037,6 +1086,7 @@ export class DataService {
     localStorage.removeItem(STORAGE_KEYS.REKAP_NILAI);
     localStorage.removeItem(STORAGE_KEYS.BAB_PELAJARAN);
     localStorage.removeItem(STORAGE_KEYS.PERTEMUAN_MURID);
+    localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
     window.location.reload();
   }
 }

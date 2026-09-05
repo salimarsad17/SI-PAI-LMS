@@ -215,4 +215,16 @@ export interface FotoKegiatan {
   fotoUrl: string;
 }
 
+export interface UserAccount {
+  id: string;
+  role: "guru" | "siswa";
+  identifier: string; // NIP untuk guru, NISN untuk siswa
+  password: string; // Kata sandi
+  nama: string;
+  kelasId?: string; // ID Kelas (misal VII-A) untuk siswa atau kelas binaan guru
+  gender?: "Laki-laki" | "Perempuan";
+  kontak?: string;
+  registeredAt: string;
+}
+
 

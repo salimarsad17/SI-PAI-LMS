@@ -39,7 +39,8 @@ import {
   NilaiKhususPai,
   RekapNilaiTotal,
   NilaiSemesterParalel,
-  BabPelajaran
+  BabPelajaran,
+  UserAccount
 } from "./types";
 
 // Import sub-components
@@ -133,17 +134,89 @@ export default function App() {
     }
   }, [students]);
 
-  // Auth logins
+  // Auth logins & registration
   const handleLoginGuru = (nip: string) => {
+    const acc = DataService.getAccounts().find(
+      (a) => a.role === "guru" && a.identifier.trim().toLowerCase() === nip.trim().toLowerCase()
+    );
+    if (acc && acc.nama) {
+      const updatedGuru: Guru = {
+        nip: acc.identifier,
+        nama: acc.nama,
+        sertifikasi: "Pendidik Profesional PAI SMP",
+        kontak: acc.kontak || guruData.kontak,
+        isWaliKelas: Boolean(acc.kelasId),
+        waliKelasDi: acc.kelasId || guruData.waliKelasDi || "VII-A"
+      };
+      setGuruData(updatedGuru);
+      DataService.saveGuru(updatedGuru);
+    }
     setLoggedGuruNip(nip);
     setRole("GURU");
     setGuruActiveTab("dashboard");
   };
 
   const handleLoginSiswa = (nisn: string) => {
+    const acc = DataService.getAccounts().find(
+      (a) => a.role === "siswa" && a.identifier.trim().toLowerCase() === nisn.trim().toLowerCase()
+    );
+    if (acc && !students.some((s) => s.nisn === acc.identifier)) {
+      const newSiswaObj: Siswa = {
+        nisn: acc.identifier,
+        nama: acc.nama,
+        gender: acc.gender || "Laki-laki",
+        agama: "Islam",
+        statusKeaktifan: "Aktif",
+        kelasId: acc.kelasId || "VII-A",
+        kontakOrangTua: acc.kontak || ""
+      };
+      const updated = sortStudentsByName([...students, newSiswaObj]);
+      setStudents(updated);
+      DataService.saveSiswa(updated);
+    }
     setLoggedSiswaNisn(nisn);
     setRole("SISWA");
     setSiswaActiveTab("dashboard");
+  };
+
+  const handleRegisterGuru = (newGuru: Guru, password: string) => {
+    const newAcc: UserAccount = {
+      id: `acc-guru-${Date.now()}`,
+      role: "guru",
+      identifier: newGuru.nip,
+      password: password,
+      nama: newGuru.nama,
+      kelasId: newGuru.waliKelasDi,
+      kontak: newGuru.kontak,
+      registeredAt: new Date().toISOString()
+    };
+    DataService.addAccount(newAcc);
+    setGuruData(newGuru);
+    DataService.saveGuru(newGuru);
+  };
+
+  const handleRegisterSiswa = (newSiswa: Siswa, password: string) => {
+    const newAcc: UserAccount = {
+      id: `acc-siswa-${Date.now()}`,
+      role: "siswa",
+      identifier: newSiswa.nisn,
+      password: password,
+      nama: newSiswa.nama,
+      kelasId: newSiswa.kelasId,
+      gender: newSiswa.gender,
+      kontak: newSiswa.kontakOrangTua,
+      registeredAt: new Date().toISOString()
+    };
+    DataService.addAccount(newAcc);
+
+    const exists = students.some((s) => s.nisn === newSiswa.nisn);
+    let updated: Siswa[];
+    if (exists) {
+      updated = students.map((s) => (s.nisn === newSiswa.nisn ? { ...s, ...newSiswa } : s));
+    } else {
+      updated = sortStudentsByName([...students, newSiswa]);
+    }
+    handleUpdateStudents(updated);
   };
 
   const handleLogOut = () => {
@@ -327,8 +400,23 @@ export default function App() {
 
   const pendingSubmissions = submissions.filter((s) => s.nilai === undefined || s.nilai === null);
 
-  // Active student object
-  const activeSiswaObj = students.find((s) => s.nisn === loggedSiswaNisn);
+  // Active student object with fallback to registered account
+  const registeredSiswaAccount = DataService.getAccounts().find(
+    (a) => a.role === "siswa" && a.identifier.trim().toLowerCase() === loggedSiswaNisn.trim().toLowerCase()
+  );
+  const activeSiswaObj =
+    students.find((s) => s.nisn === loggedSiswaNisn) ||
+    (registeredSiswaAccount
+      ? {
+          nisn: registeredSiswaAccount.identifier,
+          nama: registeredSiswaAccount.nama,
+          gender: registeredSiswaAccount.gender || "Laki-laki",
+          agama: "Islam",
+          statusKeaktifan: "Aktif" as const,
+          kelasId: registeredSiswaAccount.kelasId || "VII-A",
+          kontakOrangTua: registeredSiswaAccount.kontak || ""
+        }
+      : undefined);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -388,8 +476,11 @@ export default function App() {
         <Login
           onLoginGuru={handleLoginGuru}
           onLoginSiswa={handleLoginSiswa}
+          onRegisterGuru={handleRegisterGuru}
+          onRegisterSiswa={handleRegisterSiswa}
           teachers={guruData}
           students={students}
+          classes={classes}
         />
       ) : (
         <div className="flex-1 flex flex-col md:flex-row">
