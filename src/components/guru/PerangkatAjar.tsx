@@ -1843,7 +1843,9 @@ export default function PerangkatAjarView({
                           <option value={3}>3 Soal Singkat</option>
                           <option value={5}>5 Soal Standar (Rekomendasi)</option>
                           <option value={8}>8 Soal Komprehensif</option>
-                          <option value={10}>10 Soal Lengkap</option>
+                          <option value={10}>10 Soal Lengkap (Ujian/Asesmen)</option>
+                          <option value={15}>15 Soal Pendalaman Materi</option>
+                          <option value={20}>20 Soal Paket Lengkap Sumatif</option>
                         </select>
                       </div>
 

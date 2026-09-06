@@ -180,6 +180,8 @@ export interface SoalPilihanGanda {
   pilihan: string[]; // e.g. ["A", "B", "C", "D"]
   jawabanBenar: string; // e.g. "A", "B", "C", "D"
   pembahasan?: string;
+  tingkatKesulitan?: "Mudah" | "Sedang" | "HOTS";
+  kategori?: string;
 }
 
 export interface RekapPertemuanMurid {
